@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minha Marca</title>
+<style>
+  :root { --preto:#0d0d0d; --branco:#fff; --vermelho:#d62828; --cinza:#f2f2f2; }
+  * { box-sizing:border-box; margin:0; }
+  body { font-family:system-ui,sans-serif; background:var(--branco); color:var(--preto); }
+  header { background:var(--preto); color:var(--branco); padding:14px 20px;
+           display:flex; justify-content:space-between; align-items:center;
+           border-bottom:3px solid var(--vermelho); }
+  header img { height:36px; }               /* logo entra aqui */
+  nav a { color:var(--branco); margin-left:16px; text-decoration:none; font-weight:600; }
+  nav a:hover { color:var(--vermelho); }
+  .filtros { padding:16px 20px; display:flex; gap:8px; }
+  .filtros button { border:1px solid var(--preto); background:var(--branco); padding:8px 14px;
+                    border-radius:20px; cursor:pointer; }
+  .filtros button.ativo { background:var(--preto); color:var(--branco); }
+  .grade { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+           gap:16px; padding:0 20px 30px; }
+  .card { text-decoration:none; color:inherit; }
+  .card img { width:100%; aspect-ratio:1; object-fit:cover; background:var(--cinza); border-radius:8px; }
+  .card h3 { font-size:15px; margin-top:8px; }
+  .card p { color:var(--vermelho); font-weight:700; }
+</style>
+</head>
+<body>
+<header>
+  <img src="img/logo.png" alt="Logo" onerror="this.style.display='none'">
+  <nav><a href="index.html">Loja</a><a href="carrinho.html">Carrinho</a></nav>
+</header>
+
+<div class="filtros">
+  <button class="ativo" data-cat="todos">Todos</button>
+  <button data-cat="camisetas">Camisetas</button>
+  <button data-cat="acessorios">Acessórios</button>
+</div>
+
+<main class="grade" id="grade"></main>
+
+<script src="produtos.js"></script>
+<script>
+  const grade = document.getElementById("grade");
+  const brl = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+
+  function render(cat) {
+    const lista = cat === "todos" ? PRODUTOS : PRODUTOS.filter(p => p.categoria === cat);
+    grade.innerHTML = lista.map(p => `
+      <a class="card" href="produto.html?id=${p.id}">
+        <img src="${p.imagem}" alt="${p.nome}">
+        <h3>${p.nome}</h3>
+        <p>${brl(p.preco)}</p>
+      </a>`).join("");
+  }
+
+  document.querySelectorAll(".filtros button").forEach(b => b.onclick = () => {
+    document.querySelectorAll(".filtros button").forEach(x => x.classList.remove("ativo"));
+    b.classList.add("ativo");
+    render(b.dataset.cat);
+  });
+  render("todos");
+</script>
+</body>
+</html>
