@@ -14,14 +14,16 @@
 <footer><img src="img/logo.png" alt="ToonTura"></footer>
 <script src="loja.js"></script>
 <script>
-const s = new URLSearchParams(location.search).get("status");
+const s = new URLSearchParams(location.search).get("status")
+       || new URLSearchParams(location.search).get("collection_status");
 const m = {
-  sucesso: ["Pagamento aprovado!", "Obrigado pela compra. Você receberá os detalhes por e-mail."],
-  pendente: ["Pagamento pendente", "Assim que for confirmado, avisaremos você."],
+  approved: ["Pagamento aprovado!", "Obrigado pela compra. Você receberá os detalhes por e-mail."],
+  pending: ["Pagamento pendente", "Assim que for confirmado, avisaremos você."],
+  in_process: ["Pagamento em análise", "Assim que for confirmado, avisaremos você."],
   erro: ["Pagamento não concluído", "Nada foi cobrado. Você pode tentar de novo pelo carrinho."]
 };
 const [t, x] = m[s] || m.erro;
 document.getElementById("titulo").textContent = t;
 document.getElementById("texto").textContent = x;
-if (s === "sucesso") localStorage.removeItem("carrinho");
+if (s === "approved") localStorage.removeItem("carrinho");
 </script></body></html>
