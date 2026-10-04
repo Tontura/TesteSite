@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ToonTura</title><link rel="stylesheet" href="style.css">
+</head><body>
+<header>
+  <a href="index.html"><img src="img/logo.png" alt="ToonTura"></a>
+  <nav><a href="index.html">Loja</a><a href="carrinho.html">Carrinho (<span id="contador">0</span>)</a></nav>
+</header>
+<main id="produto"></main>
+<footer><img src="img/logo.png" alt="ToonTura"></footer>
+<script src="produtos.js"></script><script src="loja.js"></script>
+<script>
+const id = new URLSearchParams(location.search).get("id");
+const p = PRODUTOS.find(x => x.id === id);
+const el = document.getElementById("produto");
+let tam = null;
+if (!p) { el.innerHTML = "<p>Produto não encontrado.</p>"; }
+else {
+  document.title = p.nome + " | ToonTura";
+  el.innerHTML = `<div class="detalhe"><img src="${p.imagem}" alt="${p.nome}"><div>
+    <h1>${p.nome}</h1><p class="preco">${brl(p.preco)}</p>
+    <div class="tamanhos">${p.tamanhos.map(t => `<button data-t="${t}">${t}</button>`).join("")}</div>
+    <button class="btn" id="add" disabled>Escolha um tamanho</button></div></div>`;
+  const add = document.getElementById("add");
+  el.querySelectorAll(".tamanhos button").forEach(b => b.onclick = () => {
+    el.querySelectorAll(".tamanhos button").forEach(x => x.classList.remove("ativo"));
+    b.classList.add("ativo"); tam = b.dataset.t;
+    add.disabled = false; add.textContent = "Adicionar ao carrinho";
+  });
+  add.onclick = () => { addCarrinho(p.id, tam); add.textContent = "Adicionado ✓"; };
+}
+</script></body></html>
