@@ -1,0 +1,29 @@
+:root{--preto:#0d0d0d;--branco:#fff;--vermelho:#e8120a;--cinza:#f2f2f2}
+*{box-sizing:border-box;margin:0}
+body{font-family:system-ui,sans-serif;color:var(--preto);background:var(--branco)}
+header{background:var(--preto);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid var(--vermelho)}
+header img{height:40px}
+nav a{color:var(--branco);margin-left:16px;text-decoration:none;font-weight:600}
+nav a:hover{color:var(--vermelho)}
+main{max-width:960px;margin:0 auto;padding:20px}
+.filtros{display:flex;gap:8px;margin-bottom:16px}
+.filtros button{border:1px solid var(--preto);background:var(--branco);padding:8px 14px;border-radius:20px;cursor:pointer}
+.filtros button.ativo{background:var(--preto);color:var(--branco)}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px}
+.card{text-decoration:none;color:inherit}
+.card img,.detalhe img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--cinza);border-radius:8px}
+.card h3{font-size:15px;margin-top:8px}
+.preco{color:var(--vermelho);font-weight:700}
+.detalhe{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.tamanhos{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.tamanhos button{border:1px solid var(--preto);background:var(--branco);padding:10px 16px;border-radius:6px;cursor:pointer}
+.tamanhos button.ativo{background:var(--preto);color:var(--branco)}
+.btn{background:var(--vermelho);color:var(--branco);border:0;padding:14px 22px;border-radius:6px;font-weight:700;cursor:pointer;width:100%;font-size:16px}
+.btn:disabled{opacity:.5}
+.item{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--cinza)}
+.item img{width:64px;height:64px;object-fit:cover;border-radius:6px}
+.item div{flex:1}
+.item button{border:0;background:none;color:var(--vermelho);cursor:pointer;font-weight:700}
+.total{display:flex;justify-content:space-between;font-size:20px;font-weight:700;margin:16px 0}
+footer{background:var(--preto);padding:24px;text-align:center;margin-top:40px}
+footer img{height:28px}
