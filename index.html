@@ -1,32 +1,52 @@
 <!DOCTYPE html>
-<html lang="pt-BR"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ToonTura</title><link rel="stylesheet" href="style.css">
-</head><body>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ToonTura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="marquee"><div>TOONTURA ◆ NOVAS PEÇAS DISPONÍVEIS ◆ TOONTURA ◆ NOVAS PEÇAS DISPONÍVEIS ◆ TOONTURA ◆ NOVAS PEÇAS DISPONÍVEIS ◆</div></div>
+
 <header>
-  <a href="index.html"><img src="img/logo.png" alt="ToonTura"></a>
-  <nav><a href="index.html">Loja</a><a href="carrinho.html">Carrinho (<span id="contador">0</span>)</a></nav>
-</header>
-<main>
-  <div class="filtros">
-    <button class="ativo" data-cat="todos">Todos</button>
-    <button data-cat="camisetas">Camisetas</button>
-    <button data-cat="acessorios">Acessórios</button>
+  <div class="wrap nav">
+    <a href="index.html"><img src="img/logo.png" alt="ToonTura"></a>
+    <nav class="navlinks">
+      <a href="index.html">Loja</a>
+      <a href="#manifesto">Manifesto</a>
+      <a href="#contato">Contato</a>
+      <a class="cart-link" href="carrinho.html">Carrinho <span id="contador">0</span></a>
+    </nav>
   </div>
-  <div class="grade" id="grade"></div>
-</main>
-<footer><img src="img/logo.png" alt="ToonTura"></footer>>
-<script src="produtos.js"></script><script src="loja.js"></script>
-<script>
-const grade = document.getElementById("grade");
-function render(cat){
-  const l = cat === "todos" ? PRODUTOS : PRODUTOS.filter(p => p.categoria === cat);
-  grade.innerHTML = l.map(p => `<a class="card" href="produto.html?id=${p.id}">
-    <img src="${p.imagem}" alt="${p.nome}"><h3>${p.nome}</h3><p class="preco">${brl(p.preco)}</p></a>`).join("");
-}
-document.querySelectorAll(".filtros button").forEach(b => b.onclick = () => {
-  document.querySelectorAll(".filtros button").forEach(x => x.classList.remove("ativo"));
-  b.classList.add("ativo"); render(b.dataset.cat);
-});
-render("todos");
-</script></body></html>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <div class="eyebrow">NOVA COLEÇÃO</div>
+    <h1>Roupa pra ser usada, não guardada.</h1>
+    <p>Corte direto, tecido honesto, costura que aparece.</p>
+    <a href="#colecao" class="btn">Ver a coleção</a>
+  </section>
+
+  <section class="section wrap" id="colecao">
+    <div class="section-head"><h2>A coleção</h2></div>
+    <div class="filtros">
+      <button class="ativo" data-cat="todos">Todos</button>
+      <button data-cat="camisetas">Camisetas</button>
+      <button data-cat="acessorios">Acessórios</button>
+    </div>
+    <div class="grade" id="grade"></div>
+  </section>
+
+  <section class="manifesto" id="manifesto">
+    <div class="wrap section">
+      <div class="section-head"><h2>Manifesto</h2></div>
+      <div class="mlist">
+        <div class="mitem"><span>01</span><p>Roupa é pra ser usada, não guardada.</p></div>
+        <div class="mitem"><span>02</span><p>Corte direto. Tecido honesto. Costura que aparece.</p></div>
+        <div class="mitem"><span>03</span><p>Feito por
