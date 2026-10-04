@@ -12,17 +12,10 @@ module.exports = async (req, res) => {
       return res.status(400).json({ erro: "Carrinho vazio" });
     }
 
-    // Preço e nome vêm do catálogo do servidor, nunca do navegador
     const items = itens.map(i => {
       const p = PRODUTOS.find(p => p.id === i.id);
       const qtd = Number(i.qtd);
-      if (
-        !p ||
-        !p.tamanhos.includes(i.tamanho) ||
-        !Number.isInteger(qtd) ||
-        qtd < 1 ||
-        qtd > 20
-      ) {
+      if (!p || !p.tamanhos.includes(i.tamanho) || !Number.isInteger(qtd) || qtd < 1 || qtd > 20) {
         throw new Error("Item inválido no carrinho");
       }
       return {
@@ -34,9 +27,9 @@ module.exports = async (req, res) => {
       };
     });
 
-    // Endereço do site (usa a variável da Vercel; se não existir, usa o padrão)
     let site = (process.env.SITE_URL || "https://testesite-chi-ochre.vercel.app")
       .trim()
+      .replace(/^["']|["']$/g, "")
       .replace(/\/+$/, "");
     if (!/^https?:\/\//.test(site)) site = "https://" + site;
 
@@ -44,28 +37,26 @@ module.exports = async (req, res) => {
       return res.status(500).json({ erro: "MP_ACCESS_TOKEN não configurado na Vercel" });
     }
 
+    // URLs simples, sem parâmetros: o Mercado Pago acrescenta o status sozinho
+    const retorno = `${site}/retorno.html`;
+    const back_urls = { success: retorno, pending: retorno, failure: retorno };
+
     const r = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
+        Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN.trim()}`
       },
-      body: JSON.stringify({
-        items,
-        back_urls: {
-          success: `${site}/retorno.html?status=sucesso`,
-          pending: `${site}/retorno.html?status=pendente`,
-          failure: `${site}/retorno.html?status=erro`
-        },
-        auto_return: "approved"
-      })
+      body: JSON.stringify({ items, back_urls, auto_return: "approved" })
     });
 
     const d = await r.json();
 
     if (!d.init_point) {
-      console.error("MP:", JSON.stringify(d));
-      return res.status(502).json({ erro: "MP: " + (d.message || "sem detalhes") });
+      console.error("MP:", JSON.stringify(d), "back_urls:", JSON.stringify(back_urls));
+      return res.status(502).json({
+        erro: "MP: " + (d.message || "sem detalhes") + " | enviado: " + retorno
+      });
     }
 
     return res.status(200).json({ url: d.init_point });
