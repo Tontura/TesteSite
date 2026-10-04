@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carrinho | ToonTura</title><link rel="stylesheet" href="style.css">
+</head><body>
+<header>
+  <a href="index.html"><img src="img/logo.png" alt="ToonTura"></a>
+  <nav><a href="index.html">Loja</a><a href="carrinho.html">Carrinho (<span id="contador">0</span>)</a></nav>
+</header>
+<main>
+  <h1>Carrinho</h1>
+  <div id="itens"></div>
+  <div class="total"><span>Total</span><span id="total">R$ 0,00</span></div>
+  <button class="btn" id="pagar">Pagar com Mercado Pago</button>
+  <p id="msg"></p>
+</main>
+<footer><img src="img/logo.png" alt="ToonTura"></footer>
+<script src="produtos.js"></script><script src="loja.js"></script>
+<script>
+function render(){
+  const c = getCarrinho(); let total = 0;
+  document.getElementById("itens").innerHTML = c.length ? c.map((x,i) => {
+    const p = PRODUTOS.find(p => p.id === x.id); total += p.preco * x.qtd;
+    return `<div class="item"><img src="${p.imagem}" alt=""><div><strong>${p.nome}</strong><br>
+      Tam. ${x.tamanho} · ${x.qtd}x · ${brl(p.preco)}</div>
+      <button onclick="remover(${i})">Remover</button></div>`;
+  }).join("") : "<p>Seu carrinho está vazio.</p>";
+  document.getElementById("total").textContent = brl(total);
+  document.getElementById("pagar").disabled = !c.length;
+}
+function remover(i){ const c = getCarrinho(); c.splice(i,1); setCarrinho(c); render(); atualizaContador(); }
+
+document.getElementById("pagar").onclick = async () => {
+  const btn = document.getElementById("pagar"), msg = document.getElementById("msg");
+  btn.disabled = true; btn.textContent = "Aguarde...";
+  try {
+    const r = await fetch("/api/criar-pagamento", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ itens: getCarrinho() })
+    });
+    const d = await r.json();
+    if (!d.url) throw new Error();
+    location.href = d.url;
+  } catch {
+    msg.textContent = "Não foi possível iniciar o pagamento. Tente novamente.";
+    btn.disabled = false; btn.textContent = "Pagar com Mercado Pago";
+  }
+};
+render();
+</script></body></html>
