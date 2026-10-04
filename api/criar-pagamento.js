@@ -30,7 +30,10 @@ module.exports = async (req, res) => {
       })
     });
     const d = await r.json();
-    if (!d.init_point) return res.status(502).json({ erro: "Mercado Pago recusou o pedido" });
+    if (!d.init_point) {
+  console.error("MP:", JSON.stringify(d));
+  return res.status(502).json({ erro: "MP: " + (d.message || "sem detalhes") });
+}
     res.status(200).json({ url: d.init_point });
   } catch {
     res.status(400).json({ erro: "Pedido inválido" });
