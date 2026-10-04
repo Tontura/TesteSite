@@ -35,7 +35,8 @@ module.exports = async (req, res) => {
   return res.status(502).json({ erro: "MP: " + (d.message || "sem detalhes") });
 }
     res.status(200).json({ url: d.init_point });
-  } catch {
-    res.status(400).json({ erro: "Pedido inválido" });
+    } catch (e) {
+    console.error(e);
+    res.status(500).json({ erro: String(e.message) });
   }
 };
