@@ -27,11 +27,10 @@ module.exports = async (req, res) => {
       };
     });
 
-    let site = (process.env.SITE_URL || "https://testesite-chi-ochre.vercel.app")
-      .trim()
-      .replace(/^["']|["']$/g, "")
-      .replace(/\/+$/, "");
-    if (!/^https?:\/\//.test(site)) site = "https://" + site;
+        // Extrai só o primeiro endereço válido, ignorando colchetes, parênteses, aspas e espaços
+    const bruto = process.env.SITE_URL || "https://testesite-chi-ochre.vercel.app";
+    const achado = bruto.match(/https?:\/\/[^\s\[\]()"']+/);
+    const site = (achado ? achado[0] : "https://testesite-chi-ochre.vercel.app").replace(/\/+$/, "");
 
     if (!process.env.MP_ACCESS_TOKEN) {
       return res.status(500).json({ erro: "MP_ACCESS_TOKEN não configurado na Vercel" });
