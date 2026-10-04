@@ -6,7 +6,7 @@ const PRODUTOS = [
     nome: "Camiseta 01",
     categoria: "camisetas",
     preco: 79.9,
-    imagem: "img/cam-01.jpg",
+    imagem: "img/cam-01.png",
     tamanhos: ["P", "M", "G", "GG"]
   },
   {
@@ -14,7 +14,7 @@ const PRODUTOS = [
     nome: "Camiseta 02",
     categoria: "camisetas",
     preco: 79.9,
-    imagem: "img/cam-02.jpg",
+    imagem: "img/cam-02.png",
     tamanhos: ["P", "M", "G", "GG"]
   },
   {
@@ -22,7 +22,7 @@ const PRODUTOS = [
     nome: "Camiseta 03",
     categoria: "camisetas",
     preco: 79.9,
-    imagem: "img/cam-03.jpg",
+    imagem: "img/cam-03.png",
     tamanhos: ["P", "M", "G", "GG"]
   },
   {
@@ -30,7 +30,7 @@ const PRODUTOS = [
     nome: "Camiseta 04",
     categoria: "camisetas",
     preco: 79.9,
-    imagem: "img/cam-04.jpg",
+    imagem: "img/cam-04.png",
     tamanhos: ["P", "M", "G", "GG"]
   },
   {
@@ -38,7 +38,7 @@ const PRODUTOS = [
     nome: "Camiseta 05",
     categoria: "camisetas",
     preco: 79.9,
-    imagem: "img/cam-05.jpg",
+    imagem: "img/cam-05.png",
     tamanhos: ["P", "M", "G", "GG"]
   },
   {
@@ -46,7 +46,7 @@ const PRODUTOS = [
     nome: "Chinelo",
     categoria: "acessorios",
     preco: 49.9,
-    imagem: "img/chi-01.jpg",
+    imagem: "img/chi-01.png",
     tamanhos: ["35-37", "38-40", "41-43"]
   },
   {
@@ -54,7 +54,7 @@ const PRODUTOS = [
     nome: "Ecobag",
     categoria: "acessorios",
     preco: 39.9,
-    imagem: "img/eco-01.jpg",
+    imagem: "img/eco-01.png",
     tamanhos: ["Único"]
   }
 ];
