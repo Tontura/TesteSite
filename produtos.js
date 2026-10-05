@@ -14,11 +14,8 @@ const PRODUTOS = [
     categoria: "camisetas",
     preco: 79.9,
     // Array com as imagens (a primeira é a principal/capa)
-    imagens: [
-      "img/cam-01-frente.png",
-      "img/cam-01-costas.png",
-      "img/cam-01-detalhe.png"
-    ],
+    imagem: "img/cam-01.png",
+    imagens: ["img/cam-01.png", "img/cam-01-2.png", "img/cam-01-3.png"],
     tamanhos: ["P", "M", "G", "GG"],
     cores: CORES_CAMISETA,
     estampas: ESTAMPAS_CAMISETA
@@ -28,10 +25,8 @@ const PRODUTOS = [
     nome: "Camiseta 02",
     categoria: "camisetas",
     preco: 79.9,
-    imagens: [
-      "img/cam-02-frente.png",
-      "img/cam-02-costas.png"
-    ],
+    imagem: "img/cam-02.png",
+    imagens: ["img/cam-02.png", "img/cam-02-2.png", "img/cam-02-3.png"],
     tamanhos: ["P", "M", "G", "GG"],
     cores: CORES_CAMISETA,
     estampas: ESTAMPAS_CAMISETA
@@ -41,10 +36,8 @@ const PRODUTOS = [
     nome: "Camiseta 03",
     categoria: "camisetas",
     preco: 79.9,
-    imagens: [
-      "img/cam-03-frente.png",
-      "img/cam-03-costas.png"
-    ],
+    imagem: "img/cam-03.png",
+    imagens: ["img/cam-03.png", "img/cam-03-2.png", "img/cam-03-3.png"],
     tamanhos: ["P", "M", "G", "GG"],
     cores: CORES_CAMISETA,
     estampas: ESTAMPAS_CAMISETA
@@ -54,10 +47,8 @@ const PRODUTOS = [
     nome: "Camiseta 04",
     categoria: "camisetas",
     preco: 79.9,
-    imagens: [
-      "img/cam-04-frente.png",
-      "img/cam-04-costas.png"
-    ],
+    imagem: "img/cam-04.png",
+    imagens: ["img/cam-04.png", "img/cam-04-2.png", "img/cam-04-3.png"],
     tamanhos: ["P", "M", "G", "GG"],
     cores: CORES_CAMISETA,
     estampas: ESTAMPAS_CAMISETA
@@ -67,10 +58,8 @@ const PRODUTOS = [
     nome: "Camiseta 05",
     categoria: "camisetas",
     preco: 79.9,
-    imagens: [
-      "img/cam-05-frente.png",
-      "img/cam-05-costas.png"
-    ],
+    imagem: "img/cam-05.png",
+    imagens: ["img/cam-05.png", "img/cam-05-2.png", "img/cam-05-3.png"],
     tamanhos: ["P", "M", "G", "GG"],
     cores: CORES_CAMISETA,
     estampas: ESTAMPAS_CAMISETA
@@ -80,10 +69,8 @@ const PRODUTOS = [
     nome: "Chinelo",
     categoria: "acessorios",
     preco: 49.9,
-    imagens: [
-      "img/chi-01.png",
-      "img/chi-01-par.png"
-    ],
+    imagem: "img/chi-01.png",
+    imagens: ["img/chi-01-par.png"],
     tamanhos: ["35-37", "38-40", "41-43"]
   },
   {
@@ -91,10 +78,8 @@ const PRODUTOS = [
     nome: "Ecobag",
     categoria: "acessorios",
     preco: 39.9,
-    imagens: [
-      "img/eco-01.png",
-      "img/eco-01-uso.png"
-    ],
+    imagem: "img/eco-01.png",
+    imagens: ["img/eco-01-uso.png"],
     tamanhos: ["Único"]
   }
 ];
