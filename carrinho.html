@@ -36,7 +36,7 @@ function render(){
   document.getElementById("itens").innerHTML = c.length ? c.map((x,i) => {
     const p = PRODUTOS.find(p => p.id === x.id); total += p.preco * x.qtd;
     return `<div class="item"><img src="${p.imagem}" alt=""><div><strong>${p.nome}</strong><br>
-      Tam. ${x.tamanho} · ${x.qtd}x · ${brl(p.preco)}</div>
+      Tam. ${x.tamanho}${x.cor ? " · " + x.cor : ""}${x.estampa ? " · Estampa: " + x.estampa : ""} · ${x.qtd}x · ${brl(p.preco)}</div>
       <button onclick="remover(${i})">Remover</button></div>`;
   }).join("") : "<p>Seu carrinho está vazio.</p>";
   document.getElementById("total").textContent = brl(total);
