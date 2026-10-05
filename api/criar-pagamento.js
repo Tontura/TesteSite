@@ -18,16 +18,30 @@ module.exports = async (req, res) => {
       if (!p || !p.tamanhos.includes(i.tamanho) || !Number.isInteger(qtd) || qtd < 1 || qtd > 20) {
         throw new Error("Item inválido no carrinho");
       }
+
+      // Cor e estampa: obrigatórias se o produto as oferece, proibidas se não oferece
+      const temCor = Array.isArray(p.cores) && p.cores.length > 0;
+      const temEstampa = Array.isArray(p.estampas) && p.estampas.length > 0;
+      const corOk = temCor ? p.cores.some(c => c.nome === i.cor) : !i.cor;
+      const estampaOk = temEstampa ? p.estampas.includes(i.estampa) : !i.estampa;
+      if (!corOk || !estampaOk) {
+        throw new Error(`Item inválido: ${p.nome}. Remova do carrinho e adicione de novo, escolhendo cor e estampa.`);
+      }
+
+      const title = [p.nome, i.tamanho, temCor ? i.cor : null, temEstampa ? `Estampa ${i.estampa}` : null]
+        .filter(Boolean)
+        .join(" - ");
+
       return {
         id: p.id,
-        title: `${p.nome} - ${i.tamanho}`,
+        title,
         quantity: qtd,
         unit_price: p.preco,
         currency_id: "BRL"
       };
     });
 
-        // Extrai só o primeiro endereço válido, ignorando colchetes, parênteses, aspas e espaços
+    // Extrai só o primeiro endereço válido, ignorando colchetes, parênteses, aspas e espaços
     const bruto = process.env.SITE_URL || "https://testesite-chi-ochre.vercel.app";
     const achado = bruto.match(/https?:\/\/[^\s\[\]()"']+/);
     const site = (achado ? achado[0] : "https://testesite-chi-ochre.vercel.app").replace(/\/+$/, "");
@@ -61,6 +75,4 @@ module.exports = async (req, res) => {
     return res.status(200).json({ url: d.init_point });
   } catch (e) {
     console.error(e);
-    return res.status(500).json({ erro: String(e.message) });
-  }
-};
+    return
