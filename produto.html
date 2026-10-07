@@ -22,8 +22,9 @@
     <a href="index.html"><img src="img/logo.png" alt="ToonTura"></a>
     <nav class="navlinks">
       <a href="index.html">Loja</a>
-      <a href="#manifesto">Manifesto</a>
-      <a href="#contato">Contato</a>
+      <a href="index.html#manifesto">Manifesto</a>
+      <a href="index.html#contato">Contato</a>
+      <a href="conta.html">Conta</a>
       <a class="cart-link" href="carrinho.html">Carrinho <span id="contador">0</span></a>
     </nav>
   </div>
@@ -163,7 +164,7 @@ try {
       btn.classList.add("ativo");
     };
 
-    // Ação do Botão Adicionar ao Carrinho sem alert
+    // Ação do Botão Adicionar ao Carrinho
     document.getElementById("add").onclick = () => {
       let carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
 
@@ -181,7 +182,12 @@ try {
 
       carrinho.push(novoItem);
       localStorage.setItem("carrinho", JSON.stringify(carrinho));
-      
+
+      // Animação: a foto atual voa até o carrinho (função definida em loja.js)
+      if (typeof voarParaCarrinho === 'function') {
+        voarParaCarrinho(track.children[indiceAtual]);
+      }
+
       atualizarContadorHeader();
     };
   }
