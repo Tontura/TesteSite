@@ -1,12 +1,16 @@
 <!DOCTYPE html>
-<html lang="pt-BR"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Carrinho | ToonTura</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-</head><body>
+</head>
+<body>
+
 <header>
   <div class="wrap nav">
     <a href="index.html"><img src="img/logo.png" alt="ToonTura"></a>
@@ -16,6 +20,7 @@
     </nav>
   </div>
 </header>
+
 <main class="wrap page">
   <h1>Carrinho</h1>
   <div id="itens"></div>
@@ -23,42 +28,130 @@
   <button class="btn" id="pagar">Pagar com Mercado Pago</button>
   <p id="msg"></p>
 </main>
+
 <footer>
   <div class="wrap foot-row">
     <img src="img/logo.png" alt="ToonTura">
     <div class="foot-meta">© 2026 ToonTura</div>
   </div>
 </footer>
-<script src="produtos.js"></script><script src="loja.js"></script>
+
+<script src="produtos.js"></script>
+<script src="loja.js"></script>
 <script>
-function render(){
-  const c = getCarrinho(); let total = 0;
-  document.getElementById("itens").innerHTML = c.length ? c.map((x,i) => {
-    const p = PRODUTOS.find(p => p.id === x.id); total += p.preco * x.qtd;
-    return `<div class="item"><img src="${p.imagem}" alt=""><div><strong>${p.nome}</strong><br>
-      Tam. ${x.tamanho}${x.cor ? " · " + x.cor : ""}${x.estampa ? " · Estampa: " + x.estampa : ""} · ${x.qtd}x · ${brl(p.preco)}</div>
-      <button onclick="remover(${i})">Remover</button></div>`;
-  }).join("") : "<p>Seu carrinho está vazio.</p>";
-  document.getElementById("total").textContent = brl(total);
-  document.getElementById("pagar").disabled = !c.length;
+// Obtém o carrinho do localStorage (com suporte a fallback para getCarrinho de loja.js)
+function obterCarrinho() {
+  if (typeof getCarrinho === 'function') return getCarrinho();
+  return JSON.parse(localStorage.getItem("carrinho") || "[]");
 }
-function remover(i){ const c = getCarrinho(); c.splice(i,1); setCarrinho(c); render(); atualizaContador(); }
+
+// Guarda o carrinho atualizado no localStorage
+function guardarCarrinho(carrinho) {
+  if (typeof setCarrinho === 'function') {
+    setCarrinho(carrinho);
+  } else {
+    localStorage.setItem("carrinho", JSON.stringify(carrinho));
+  }
+}
+
+// Atualiza o contador visual na barra de navegação
+function atualizarContadorHeader() {
+  const carrinho = obterCarrinho();
+  const contador = document.getElementById("contador");
+  if (contador) {
+    contador.innerText = carrinho.length;
+  }
+}
+
+// Formatação BRL segura
+function formatarPreco(valor) {
+  if (typeof brl === 'function') return brl(valor);
+  return "R$ " + Number(valor).toFixed(2).replace(".", ",");
+}
+
+function render() {
+  const carrinho = obterCarrinho();
+  let total = 0;
+
+  const containerItens = document.getElementById("itens");
+
+  if (!carrinho.length) {
+    containerItens.innerHTML = "<p>Seu carrinho está vazio.</p>";
+    document.getElementById("total").textContent = formatarPreco(0);
+    document.getElementById("pagar").disabled = true;
+    atualizarContadorHeader();
+    return;
+  }
+
+  containerItens.innerHTML = carrinho.map((item, index) => {
+    // Tenta obter os dados do produto no produtos.js ou usa o que foi guardado no item do carrinho
+    const prodRef = typeof PRODUTOS !== 'undefined' ? PRODUTOS.find(p => p.id === item.id) : null;
+    
+    const preco = item.preco || (prodRef ? prodRef.preco : 0);
+    const qtd = item.quantidade || item.qtd || 1;
+    const nome = item.nome || (prodRef ? prodRef.nome : 'Produto');
+    const imagem = item.imagem || (prodRef ? (prodRef.imagem || (prodRef.imagens && prodRef.imagens[0])) : '');
+
+    total += preco * qtd;
+
+    const detalhes = [
+      `Tam. ${item.tamanho || 'Único'}`,
+      item.estampa ? `Estampa: ${item.estampa}` : null,
+      item.cor ? `Cor: ${item.cor}` : null,
+      `${qtd}x`,
+      formatarPreco(preco)
+    ].filter(Boolean).join(" · ");
+
+    return `
+      <div class="item">
+        <img src="${imagem}" alt="${nome}">
+        <div>
+          <strong>${nome}</strong><br>
+          ${detalhes}
+        </div>
+        <button onclick="remover(${index})">Remover</button>
+      </div>
+    `;
+  }).join("");
+
+  document.getElementById("total").textContent = formatarPreco(total);
+  document.getElementById("pagar").disabled = false;
+  atualizarContadorHeader();
+}
+
+function remover(index) {
+  const carrinho = obterCarrinho();
+  carrinho.splice(index, 1);
+  guardarCarrinho(carrinho);
+  render();
+}
 
 document.getElementById("pagar").onclick = async () => {
-  const btn = document.getElementById("pagar"), msg = document.getElementById("msg");
-  btn.disabled = true; btn.textContent = "Aguarde...";
-    try {
+  const btn = document.getElementById("pagar");
+  const msg = document.getElementById("msg");
+  btn.disabled = true;
+  btn.textContent = "Aguarde...";
+  msg.textContent = "";
+
+  try {
     const r = await fetch("/api/criar-pagamento", {
-      method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ itens: getCarrinho() })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itens: obterCarrinho() })
     });
+
     const d = await r.json();
-    if (!d.url) throw new Error(d.erro || "sem resposta");
+    if (!d.url) throw new Error(d.erro || "Sem resposta do servidor de pagamento");
+    
     location.href = d.url;
   } catch (e) {
     msg.textContent = "Erro: " + e.message;
-    btn.disabled = false; btn.textContent = "Pagar com Mercado Pago";
+    btn.disabled = false;
+    btn.textContent = "Pagar com Mercado Pago";
   }
 };
+
 render();
-</script></body></html>
+</script>
+</body>
+</html>
