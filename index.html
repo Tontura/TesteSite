@@ -78,15 +78,54 @@
 try {
   const grade = document.getElementById("grade");
   
+  // Função auxiliar de formatação BRL caso brl() de loja.js não esteja disponível
+  function formatarPreco(valor) {
+    if (typeof brl === 'function') return brl(valor);
+    return "R$ " + Number(valor).toFixed(2).replace(".", ",");
+  }
+
   function render(cat){
+    if (typeof PRODUTOS === "undefined") {
+      grade.innerHTML = "<p>Erro: Arquivo produtos.js não carregado.</p>";
+      return;
+    }
+
     const l = cat === "todos" ? PRODUTOS : PRODUTOS.filter(p => p.categoria === cat);
     
     grade.innerHTML = l.length ? l.map(p => {
-      const imgCapa = p.imagem;
-      // Define a foto de hover (procura 'cam-01-4', pega a última do array ou repete a capa)
-      const imgHover = (p.imagens && p.imagens.length > 1) 
-        ? (p.imagens.find(img => img.includes('cam-01-4')) || p.imagens[p.imagens.length - 1]) 
-        : imgCapa;
+      const imgCapa = p.imagem || (p.imagens && p.imagens[0]) || '';
+      
+      // Busca a imagem de hover
+      let imgHover = imgCapa;
+      if (p.imagens && p.imagens.length > 1) {
+        const fotoEspecial = p.imagens.find(i => i.includes('cam-01-4'));
+        imgHover = fotoEspecial || p.imagens[1] || p.imagens[p.imagens.length - 1];
+      }
 
-      return `
-        <a
+      return `<a class="card" href="produto.html?id=${p.id}">
+        <div class="card-img-wrap">
+          <img class="img-capa" src="${imgCapa}" alt="${p.nome}">
+          <img class="img-hover" src="${imgHover}" alt="${p.nome}">
+        </div>
+        <h3>${p.nome}</h3>
+        <p class="preco">${formatarPreco(p.preco)}</p>
+      </a>`;
+    }).join("")
+    : "<p>Nenhum produto nesta categoria.</p>";
+  }
+
+  document.querySelectorAll(".filtros button").forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll(".filtros button").forEach(x => x.classList.remove("ativo"));
+      b.classList.add("ativo"); 
+      render(b.dataset.cat);
+    };
+  });
+
+  render("todos");
+} catch (e) {
+  document.getElementById("grade").innerHTML = "<p>Erro de execução: " + e.message + "</p>";
+}
+</script>
+</body>
+</html>
