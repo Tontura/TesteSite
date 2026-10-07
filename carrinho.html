@@ -52,11 +52,15 @@ function guardarCarrinho(carrinho) {
   }
 }
 
+function obterTotalItens(carrinho) {
+  return carrinho.reduce((acc, item) => acc + Number(item.qtd || item.quantidade || 1), 0);
+}
+
 function atualizarContadorHeader() {
   const carrinho = obterCarrinho();
   const contador = document.getElementById("contador");
   if (contador) {
-    contador.innerText = carrinho.length;
+    contador.innerText = obterTotalItens(carrinho);
   }
 }
 
@@ -83,7 +87,7 @@ function render() {
     const prodRef = typeof PRODUTOS !== 'undefined' ? PRODUTOS.find(p => p.id === item.id) : null;
     
     const preco = item.preco || (prodRef ? prodRef.preco : 0);
-    const qtd = item.qtd || item.quantidade || 1;
+    const qtd = Number(item.qtd || item.quantidade || 1);
     const nome = item.nome || (prodRef ? prodRef.nome : 'Produto');
     const imagem = item.imagem || (prodRef ? (prodRef.imagem || (prodRef.imagens && prodRef.imagens[0])) : '');
 
@@ -92,6 +96,7 @@ function render() {
     const detalhes = [
       `Tam. ${item.tamanho || 'Único'}`,
       item.estampa ? `Estampa: ${item.estampa}` : null,
+      item.cor ? `Cor: ${item.cor}` : null,
       `${qtd}x`,
       formatarPreco(preco)
     ].filter(Boolean).join(" · ");
@@ -129,12 +134,14 @@ document.getElementById("pagar").onclick = async () => {
 
   try {
     const carrinhoBruto = obterCarrinho();
+    
+    // Formata os itens com todos os campos exigidos pela API do Mercado Pago
     const itensFormatados = carrinhoBruto.map(item => ({
       id: item.id,
       qtd: Number(item.qtd || item.quantidade || 1),
-      quantidade: Number(item.qtd || item.quantidade || 1),
       tamanho: item.tamanho || 'Único',
-      estampa: item.estampa || ''
+      estampa: item.estampa || 'Frente',
+      cor: item.cor || 'Preta'
     }));
 
     const r = await fetch("/api/criar-pagamento", {
@@ -144,7 +151,7 @@ document.getElementById("pagar").onclick = async () => {
     });
 
     const d = await r.json();
-    if (!r.ok || !d.url) throw new Error(d.erro || "Sem resposta do servidor de pagamento");
+    if (!r.ok || !d.url) throw new Error(d.erro || "Erro interno ao processar pagamento");
     
     location.href = d.url;
   } catch (e) {
