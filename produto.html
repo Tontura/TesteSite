@@ -40,6 +40,18 @@
 <script src="loja.js"></script>
 <script>
 try {
+  // Função para atualizar o número no ícone do carrinho
+  function atualizarContadorHeader() {
+    const carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
+    const contador = document.getElementById("contador");
+    if (contador) {
+      contador.innerText = carrinho.length;
+    }
+  }
+
+  // Atualiza o contador assim que entra na página
+  atualizarContadorHeader();
+
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
   const produto = PRODUTOS.find(p => p.id === id) || PRODUTOS[0];
@@ -47,7 +59,7 @@ try {
   if (!produto) {
     document.getElementById("detalhe-container").innerHTML = "<p>Produto não encontrado.</p>";
   } else {
-    // Garante que listaImagens tenha ao menos uma imagem
+    // Garante que listaImagens tenha ao menos uma imagem válida
     const listaImagens = (produto.imagens && produto.imagens.length > 0) 
       ? produto.imagens 
       : [produto.imagem];
@@ -58,7 +70,7 @@ try {
 
     const precoFormatado = typeof brl === 'function' ? brl(produto.preco) : `R$ ${produto.preco.toFixed(2).replace('.', ',')}`;
 
-    // Renderiza HTML da página do produto
+    // Renderiza a estrutura da página
     document.getElementById("detalhe-container").innerHTML = `
       <div class="galeria">
         <div class="galeria-slider">
@@ -110,7 +122,7 @@ try {
       </div>
     `;
 
-    // Lógica de Slider/Carrossel
+    // Controle do Slider/Carrossel
     const track = document.getElementById("slider-track");
     const total = listaImagens.length;
 
@@ -134,7 +146,7 @@ try {
       btnNext.onclick = () => mudarFoto(indiceAtual + 1);
     }
 
-    // Seleção de Opções (Tamanho e Estampa)
+    // Controle dos Botões de Opções (Tamanho e Estampa)
     window.selecionarTamanho = function(tamanho, btn) {
       tamanhoSelecionado = tamanho;
       document.querySelectorAll("#grupo-tamanhos button").forEach(b => b.classList.remove("ativo"));
@@ -147,13 +159,26 @@ try {
       btn.classList.add("ativo");
     };
 
-    // Botão Adicionar ao Carrinho
+    // Ação do Botão Adicionar ao Carrinho (Salva no localStorage)
     document.getElementById("add").onclick = () => {
-      if (typeof adicionarAoCarrinho === 'function') {
-        adicionarAoCarrinho(produto, tamanhoSelecionado, estampaSelecionada);
-      } else {
-        alert(`Produto adicionado!\nTamanho: ${tamanhoSelecionado || 'Único'}\nEstampa: ${estampaSelecionada || 'Padrão'}`);
-      }
+      let carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
+
+      const novoItem = {
+        id: produto.id,
+        nome: produto.nome,
+        preco: produto.preco,
+        imagem: produto.imagem || (produto.imagens && produto.imagens[0]),
+        tamanho: tamanhoSelecionado || 'Único',
+        estampa: estampaSelecionada || 'Padrão',
+        quantidade: 1
+      };
+
+      carrinho.push(novoItem);
+      localStorage.setItem("carrinho", JSON.stringify(carrinho));
+      
+      atualizarContadorHeader();
+
+      alert(`Produto adicionado ao carrinho!\nItem: ${produto.nome}\nTamanho: ${novoItem.tamanho}\nEstampa: ${novoItem.estampa}`);
     };
   }
 } catch (e) {
