@@ -15,7 +15,11 @@ module.exports = async (req, res) => {
     const items = itens.map(i => {
       const p = PRODUTOS.find(p => p.id === i.id);
       const qtd = Number(i.qtd);
-      if (!p || !p.tamanhos.includes(i.tamanho) || !Number.isInteger(qtd) || qtd < 1 || qtd > 20) {
+
+      const temTamanho = p && Array.isArray(p.tamanhos) && p.tamanhos.length > 0;
+      const tamanhoOk = temTamanho ? p.tamanhos.includes(i.tamanho) : !i.tamanho;
+
+      if (!p || !tamanhoOk || !Number.isInteger(qtd) || qtd < 1 || qtd > 20) {
         throw new Error("Item inválido no carrinho");
       }
 
@@ -75,4 +79,6 @@ module.exports = async (req, res) => {
     return res.status(200).json({ url: d.init_point });
   } catch (e) {
     console.error(e);
-    return
+    return res.status(500).json({ erro: "Erro interno: " + e.message });
+  }
+};
