@@ -39,13 +39,11 @@
 <script src="produtos.js"></script>
 <script src="loja.js"></script>
 <script>
-// Obtém o carrinho do localStorage (com suporte a fallback para getCarrinho de loja.js)
 function obterCarrinho() {
   if (typeof getCarrinho === 'function') return getCarrinho();
   return JSON.parse(localStorage.getItem("carrinho") || "[]");
 }
 
-// Guarda o carrinho atualizado no localStorage
 function guardarCarrinho(carrinho) {
   if (typeof setCarrinho === 'function') {
     setCarrinho(carrinho);
@@ -54,7 +52,6 @@ function guardarCarrinho(carrinho) {
   }
 }
 
-// Atualiza o contador visual na barra de navegação
 function atualizarContadorHeader() {
   const carrinho = obterCarrinho();
   const contador = document.getElementById("contador");
@@ -63,7 +60,6 @@ function atualizarContadorHeader() {
   }
 }
 
-// Formatação BRL segura
 function formatarPreco(valor) {
   if (typeof brl === 'function') return brl(valor);
   return "R$ " + Number(valor).toFixed(2).replace(".", ",");
@@ -84,11 +80,10 @@ function render() {
   }
 
   containerItens.innerHTML = carrinho.map((item, index) => {
-    // Tenta obter os dados do produto no produtos.js ou usa o que foi guardado no item do carrinho
     const prodRef = typeof PRODUTOS !== 'undefined' ? PRODUTOS.find(p => p.id === item.id) : null;
     
     const preco = item.preco || (prodRef ? prodRef.preco : 0);
-    const qtd = item.quantidade || item.qtd || 1;
+    const qtd = item.qtd || item.quantidade || 1;
     const nome = item.nome || (prodRef ? prodRef.nome : 'Produto');
     const imagem = item.imagem || (prodRef ? (prodRef.imagem || (prodRef.imagens && prodRef.imagens[0])) : '');
 
@@ -97,7 +92,6 @@ function render() {
     const detalhes = [
       `Tam. ${item.tamanho || 'Único'}`,
       item.estampa ? `Estampa: ${item.estampa}` : null,
-      item.cor ? `Cor: ${item.cor}` : null,
       `${qtd}x`,
       formatarPreco(preco)
     ].filter(Boolean).join(" · ");
@@ -134,14 +128,23 @@ document.getElementById("pagar").onclick = async () => {
   msg.textContent = "";
 
   try {
+    const carrinhoBruto = obterCarrinho();
+    const itensFormatados = carrinhoBruto.map(item => ({
+      id: item.id,
+      qtd: Number(item.qtd || item.quantidade || 1),
+      quantidade: Number(item.qtd || item.quantidade || 1),
+      tamanho: item.tamanho || 'Único',
+      estampa: item.estampa || ''
+    }));
+
     const r = await fetch("/api/criar-pagamento", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ itens: obterCarrinho() })
+      body: JSON.stringify({ itens: itensFormatados })
     });
 
     const d = await r.json();
-    if (!d.url) throw new Error(d.erro || "Sem resposta do servidor de pagamento");
+    if (!r.ok || !d.url) throw new Error(d.erro || "Sem resposta do servidor de pagamento");
     
     location.href = d.url;
   } catch (e) {
