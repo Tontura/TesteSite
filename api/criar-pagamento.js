@@ -2,7 +2,6 @@ const { MercadoPagoConfig, Preference } = require('mercadopago');
 const PRODUTOS = require('../produtos.js');
 
 module.exports = async function handler(req, res) {
-  // Permite apenas requisições POST
   if (req.method !== 'POST') {
     return res.status(405).json({ erro: 'Método não permitido' });
   }
@@ -14,7 +13,6 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ erro: 'Carrinho vazio ou formato inválido' });
     }
 
-    // Inicializa o SDK do Mercado Pago
     const client = new MercadoPagoConfig({
       accessToken: process.env.MP_ACCESS_TOKEN
     });
@@ -23,7 +21,6 @@ module.exports = async function handler(req, res) {
     const resumoPedido = [];
 
     for (const item of itens) {
-      // Procura o produto no produtos.js
       const produtoReal = PRODUTOS.find(p => p.id === item.id);
 
       if (!produtoReal) {
@@ -37,7 +34,6 @@ module.exports = async function handler(req, res) {
       const estampa = item.estampa || 'Frente';
       const cor = item.cor || 'Preta';
 
-      // Cria um título descritivo para cada variação
       const tituloDetalhado = `${produtoReal.nome} - Tam: ${tamanho} - Cor: ${cor} - Estampa: ${estampa}`;
 
       itemsMercadoPago.push({
@@ -51,8 +47,19 @@ module.exports = async function handler(req, res) {
       resumoPedido.push(`${quantidade}x ${produtoReal.nome} (${tamanho}/${cor}/${estampa})`);
     }
 
+    // Garante um URL base bem formatado com https://
+    let baseUrl = process.env.SITE_URL;
+    if (!baseUrl) {
+      const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
+      baseUrl = `https://${host.replace(/^https?:\/\//, '')}`;
+    } else if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+      baseUrl = `https://${baseUrl}`;
+    }
+
+    // Remove barra no final, se houver
+    baseUrl = baseUrl.replace(/\/$/, '');
+
     const preference = new Preference(client);
-    const siteUrl = process.env.SITE_URL || 'https://' + (req.headers.host || 'localhost');
 
     const response = await preference.create({
       body: {
@@ -62,9 +69,9 @@ module.exports = async function handler(req, res) {
         },
         external_reference: `PEDIDO-${Date.now()}`,
         back_urls: {
-          success: `${siteUrl}/carrinho.html?status=sucesso`,
-          failure: `${siteUrl}/carrinho.html?status=falha`,
-          pending: `${siteUrl}/carrinho.html?status=pendente`
+          success: `${baseUrl}/carrinho.html?status=sucesso`,
+          failure: `${baseUrl}/carrinho.html?status=falha`,
+          pending: `${baseUrl}/carrinho.html?status=pendente`
         },
         auto_return: 'approved'
       }
