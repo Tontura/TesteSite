@@ -72,20 +72,43 @@
   </div>
 </footer>
 
-<script src="produtos.js"></script><script src="loja.js"></script>
+<script src="produtos.js"></script>
+<script src="loja.js"></script>
 <script>
 try {
   const grade = document.getElementById("grade");
+  
   function render(cat){
     const l = cat === "todos" ? PRODUTOS : PRODUTOS.filter(p => p.categoria === cat);
-    grade.innerHTML = l.length ? l.map(p => `<a class="card" href="produto.html?id=${p.id}">
-      <img src="${p.imagem}" alt="${p.nome}"><h3>${p.nome}</h3><p class="preco">${brl(p.preco)}</p></a>`).join("")
-      : "<p>Nenhum produto nesta categoria.</p>";
+    
+    grade.innerHTML = l.length ? l.map(p => {
+      // Define a imagem principal e a imagem de hover
+      const imgCapa = p.imagem;
+      // Se tiver mais de 1 foto no array de imagens, pega a foto do hover (ou a última/segunda foto)
+      const imgHover = (p.imagens && p.imagens.length > 1) 
+        ? (p.imagens.find(img => img.includes('cam-01-4')) || p.imagens[p.imagens.length - 1]) 
+        : imgCapa;
+
+      return `
+        <a class="card" href="produto.html?id=${p.id}">
+          <img src="${imgCapa}" 
+               alt="${p.nome}"
+               onmouseover="this.src='${imgHover}'"
+               onmouseout="this.src='${imgCapa}'">
+          <h3>${p.nome}</h3>
+          <p class="preco">${brl(p.preco)}</p>
+        </a>
+      `;
+    }).join("")
+    : "<p>Nenhum produto nesta categoria.</p>";
   }
+
   document.querySelectorAll(".filtros button").forEach(b => b.onclick = () => {
     document.querySelectorAll(".filtros button").forEach(x => x.classList.remove("ativo"));
-    b.classList.add("ativo"); render(b.dataset.cat);
+    b.classList.add("ativo"); 
+    render(b.dataset.cat);
   });
+
   render("todos");
 } catch (e) {
   document.getElementById("grade").innerHTML = "<p>Erro: " + e.message + "</p>";
