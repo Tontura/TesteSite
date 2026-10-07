@@ -13,7 +13,7 @@ const PRODUTOS = [
     nome: "Camiseta 01",
     categoria: "camisetas",
     preco: 79.9,
-    imagem: ["img/cam-01.png", "img/cam-01-2.png", "img/cam-01-3.png", "img/cam-01-4.png"],
+    imagens: ["img/cam-01.png", "img/cam-01-2.png", "img/cam-01-3.png", "img/cam-01-4.png"],
     tamanhos: ["P", "M", "G", "GG"],
     cores: CORES_CAMISETA,
     estampas: ESTAMPAS_CAMISETA
