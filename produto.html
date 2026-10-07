@@ -40,16 +40,19 @@
 <script src="loja.js"></script>
 <script>
 try {
-  // Função para atualizar o número no ícone do carrinho
+  // Função para calcular total de itens sem dar NaN
+  function obterTotalItens(carrinho) {
+    return carrinho.reduce((acc, item) => acc + Number(item.qtd || item.quantidade || 1), 0);
+  }
+
   function atualizarContadorHeader() {
     const carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
     const contador = document.getElementById("contador");
     if (contador) {
-      contador.innerText = carrinho.length;
+      contador.innerText = obterTotalItens(carrinho);
     }
   }
 
-  // Atualiza o contador assim que entra na página
   atualizarContadorHeader();
 
   const params = new URLSearchParams(window.location.search);
@@ -59,18 +62,17 @@ try {
   if (!produto) {
     document.getElementById("detalhe-container").innerHTML = "<p>Produto não encontrado.</p>";
   } else {
-    // Garante que listaImagens tenha ao menos uma imagem válida
     const listaImagens = (produto.imagens && produto.imagens.length > 0) 
       ? produto.imagens 
       : [produto.imagem];
 
     let indiceAtual = 0;
-    let tamanhoSelecionado = produto.tamanhos ? produto.tamanhos[0] : null;
-    let estampaSelecionada = produto.estampas ? produto.estampas[0] : null;
+    let tamanhoSelecionado = produto.tamanhos ? produto.tamanhos[0] : 'Único';
+    let estampaSelecionada = produto.estampas ? produto.estampas[0] : (ESTAMPAS_CAMISETA ? ESTAMPAS_CAMISETA[0] : 'Frente');
+    let corSelecionada = (produto.cores && produto.cores.length > 0) ? produto.cores[0].nome : 'Preta';
 
     const precoFormatado = typeof brl === 'function' ? brl(produto.preco) : `R$ ${produto.preco.toFixed(2).replace('.', ',')}`;
 
-    // Renderiza a estrutura da página
     document.getElementById("detalhe-container").innerHTML = `
       <div class="galeria">
         <div class="galeria-slider">
@@ -122,7 +124,6 @@ try {
       </div>
     `;
 
-    // Controle do Slider/Carrossel
     const track = document.getElementById("slider-track");
     const total = listaImagens.length;
 
@@ -146,7 +147,6 @@ try {
       btnNext.onclick = () => mudarFoto(indiceAtual + 1);
     }
 
-    // Controle dos Botões de Opções (Tamanho e Estampa)
     window.selecionarTamanho = function(tamanho, btn) {
       tamanhoSelecionado = tamanho;
       document.querySelectorAll("#grupo-tamanhos button").forEach(b => b.classList.remove("ativo"));
@@ -159,7 +159,7 @@ try {
       btn.classList.add("ativo");
     };
 
-    // Ação do Botão Adicionar ao Carrinho (Salva no localStorage)
+    // Ação do Botão Adicionar ao Carrinho sem alert
     document.getElementById("add").onclick = () => {
       let carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
 
@@ -169,7 +169,9 @@ try {
         preco: produto.preco,
         imagem: produto.imagem || (produto.imagens && produto.imagens[0]),
         tamanho: tamanhoSelecionado || 'Único',
-        estampa: estampaSelecionada || 'Padrão',
+        estampa: estampaSelecionada || 'Frente',
+        cor: corSelecionada || 'Preta',
+        qtd: 1,
         quantidade: 1
       };
 
@@ -177,8 +179,6 @@ try {
       localStorage.setItem("carrinho", JSON.stringify(carrinho));
       
       atualizarContadorHeader();
-
-      alert(`Produto adicionado ao carrinho!\nItem: ${produto.nome}\nTamanho: ${novoItem.tamanho}\nEstampa: ${novoItem.estampa}`);
     };
   }
 } catch (e) {
