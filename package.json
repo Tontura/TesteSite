@@ -1,0 +1,9 @@
+{
+  "name": "toontura",
+  "version": "1.0.0",
+  "description": "E-commerce ToonTura",
+  "main": "index.js",
+  "dependencies": {
+    "mercadopago": "^2.0.0"
+  }
+}
