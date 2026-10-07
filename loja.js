@@ -15,3 +15,24 @@ function atualizaContador(){
   if (el) el.textContent = n;
 }
 document.addEventListener("DOMContentLoaded", atualizaContador);
+
+function voarParaCarrinho(imgEl){
+  const alvo = document.querySelector('.cart-link');
+  if(!imgEl || !alvo) return;
+  const a = imgEl.getBoundingClientRect(), b = alvo.getBoundingClientRect();
+  const c = imgEl.cloneNode();
+  c.className = 'voando';
+  c.style.cssText = `left:${a.left}px;top:${a.top}px;width:${a.width}px;height:${a.height}px`;
+  document.body.appendChild(c);
+  requestAnimationFrame(() => {
+    const dx = b.left + b.width/2 - (a.left + a.width/2);
+    const dy = b.top + b.height/2 - (a.top + a.height/2);
+    c.style.transform = `translate(${dx}px,${dy}px) scale(.08)`;
+    c.style.opacity = '.4';
+  });
+  setTimeout(() => {
+    c.remove();
+    alvo.classList.add('bump');
+    setTimeout(() => alvo.classList.remove('bump'), 400);
+  }, 800);
+}
