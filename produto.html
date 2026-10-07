@@ -1,66 +1,132 @@
 <!DOCTYPE html>
-<html lang="pt-BR"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ToonTura</title>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ToonTura — Produto</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-</head><body>
+</head>
+<body>
+
+<div class="marquee"><div>TOONTURA ◆ NOVAS PEÇAS DISPONÍVEIS ◆ TOONTURA ◆ NOVAS PEÇAS DISPONÍVEIS ◆</div></div>
+
 <header>
   <div class="wrap nav">
     <a href="index.html"><img src="img/logo.png" alt="ToonTura"></a>
     <nav class="navlinks">
       <a href="index.html">Loja</a>
+      <a href="#manifesto">Manifesto</a>
+      <a href="#contato">Contato</a>
       <a class="cart-link" href="carrinho.html">Carrinho <span id="contador">0</span></a>
     </nav>
   </div>
 </header>
-<main class="wrap page" id="produto"></main>
+
+<main class="page wrap">
+  <div id="detalhe-container" class="detalhe"></div>
+</main>
+
 <footer>
   <div class="wrap foot-row">
     <img src="img/logo.png" alt="ToonTura">
     <div class="foot-meta">© 2026 ToonTura</div>
   </div>
 </footer>
-<script src="produtos.js"></script><script src="loja.js"></script>
+
+<script src="produtos.js"></script>
+<script src="loja.js"></script>
 <script>
-const id = new URLSearchParams(location.search).get("id");
-const p = PRODUTOS.find(x => x.id === id);
-const el = document.getElementById("produto");
-const sel = { tamanho: null, cor: null, estampa: null };
-if (!p) { el.innerHTML = "<p>Produto não encontrado.</p>"; }
-else {
-  document.title = p.nome + " | ToonTura";
-  const fotos = p.imagens || [p.imagem];
-  const galeria = `<div class="galeria"><img id="foto" src="${fotos[0]}" alt="${p.nome}">
-    ${fotos.length > 1 ? `<div class="miniaturas">${fotos.map((f,i) =>
-      `<button type="button" class="${i===0 ? "ativo" : ""}" data-src="${f}"><img src="${f}" alt="${p.nome} - foto ${i+1}"></button>`
-    ).join("")}</div>` : ""}</div>`;
-  const grupo = (titulo, chave, itens) => `<div class="opcao"><h4>${titulo}</h4>
-    <div class="tamanhos" data-k="${chave}">${itens}</div></div>`;
-  el.innerHTML = `<div class="detalhe">${galeria}<div>
-    <h1>${p.nome}</h1><p class="preco">${brl(p.preco)}</p>
-    ${grupo("Tamanho", "tamanho", p.tamanhos.map(t => `<button data-v="${t}">${t}</button>`).join(""))}
-    ${p.cores ? grupo("Cor", "cor", p.cores.map(c => `<button data-v="${c.nome}"><i class="swatch" style="background:${c.hex}"></i>${c.nome}</button>`).join("")) : ""}
-    ${p.estampas ? grupo("Estampa", "estampa", p.estampas.map(e => `<button data-v="${e}">${e}</button>`).join("")) : ""}
-    <button class="btn" id="add" disabled>Escolha as opções</button></div></div>`;
+try {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  const produto = PRODUTOS.find(p => p.id === id) || PRODUTOS[0];
 
-  el.querySelectorAll(".miniaturas button").forEach(b => b.onclick = () => {
-    document.getElementById("foto").src = b.dataset.src;
-    el.querySelectorAll(".miniaturas button").forEach(x => x.classList.remove("ativo"));
-    b.classList.add("ativo");
-  });
+  if (!produto) {
+    document.getElementById("detalhe-container").innerHTML = "<p>Produto não encontrado.</p>";
+  } else {
+    // Lista de imagens (garante fallback se não houver array 'imagens')
+    const listaImagens = (produto.imagens && produto.imagens.length > 0) 
+      ? produto.imagens 
+      : [produto.imagem];
 
-  const add = document.getElementById("add");
-  const obrigatorios = ["tamanho"].concat(p.cores ? ["cor"] : [], p.estampas ? ["estampa"] : []);
-  el.querySelectorAll(".tamanhos").forEach(g => g.querySelectorAll("button").forEach(b => b.onclick = () => {
-    g.querySelectorAll("button").forEach(x => x.classList.remove("ativo"));
-    b.classList.add("ativo"); sel[g.dataset.k] = b.dataset.v;
-    const pronto = obrigatorios.every(k => sel[k]);
-    add.disabled = !pronto;
-    add.textContent = pronto ? "Adicionar ao carrinho" : "Escolha as opções";
-  }));
-  add.onclick = () => { addCarrinho(p.id, sel.tamanho, sel.cor, sel.estampa); add.textContent = "Adicionado ✓"; };
+    let indiceAtual = 0;
+
+    // Função de formatação BRL
+    const precoFormatado = typeof brl === 'function' ? brl(produto.preco) : `R$ ${produto.preco.toFixed(2).replace('.', ',')}`;
+
+    // Renderiza HTML do Produto
+    document.getElementById("detalhe-container").innerHTML = `
+      <div class="galeria">
+        <div class="galeria-slider">
+          ${listaImagens.length > 1 ? '<button class="btn-slider prev" id="btn-prev">❮</button>' : ''}
+          <div class="slider-track" id="slider-track">
+            ${listaImagens.map((img, i) => `<img src="${img}" alt="${produto.nome} - Foto${i + 1}">`).join('')}
+          </div>
+          ${listaImagens.length > 1 ? '<button class="btn-slider next" id="btn-next">❯</button>' : ''}
+        </div>
+        
+        ${listaImagens.length > 1 ? `
+          <div class="miniaturas" id="miniaturas">
+            ${listaImagens.map((img, i) => `
+              <button class="${i === 0 ? 'ativo' : ''}" onclick="mudarFoto(${i})">
+                <img src="${img}" alt="Miniatura ${i + 1}">
+              </button>
+            `).join('')}
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="info-produto">
+        <h1>${produto.nome}</h1>
+        <p class="preco">${precoFormatado}</p>
+
+        ${produto.tamanhos ? `
+          <div class="opcao">
+            <h4>Tamanho</h4>
+            <div class="tamanhos">
+              ${produto.tamanhos.map((t, i) => `<button class="${i === 0 ? 'ativo' : ''}">${t}</button>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <button class="btn" id="add">Adicionar ao carrinho</button>
+      </div>
+    `;
+
+    // Lógica do Slider
+    const track = document.getElementById("slider-track");
+    const total = listaImagens.length;
+
+    window.mudarFoto = function(index) {
+      if (index < 0) index = total - 1;
+      if (index >= total) index = 0;
+      indiceAtual = index;
+
+      // Desliza a pista horizontalmente
+      track.style.transform = `translateX(-${indiceAtual * 100}%)`;
+
+      // Atualiza destaque da miniatura ativa
+      const thumbs = document.querySelectorAll(".miniaturas button");
+      thumbs.forEach((t, i) => {
+        t.classList.toggle("ativo", i === indiceAtual);
+      });
+    };
+
+    // Eventos dos botões de seta (se houver mais de 1 imagem)
+    const btnPrev = document.getElementById("btn-prev");
+    const btnNext = document.getElementById("btn-next");
+
+    if (btnPrev && btnNext) {
+      btnPrev.onclick = () => mudarFoto(indiceAtual - 1);
+      btnNext.onclick = () => mudarFoto(indiceAtual + 1);
+    }
+  }
+} catch (e) {
+  document.getElementById("detalhe-container").innerHTML = "<p>Erro: " + e.message + "</p>";
 }
-</script></body></html>
+</script>
+</body>
+</html>
