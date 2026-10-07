@@ -1,84 +1,86 @@
-// api/criar-pagamento.js
-const PRODUTOS = require("../produtos.js");
+import { MercadoPagoConfig, Preference } from 'mercadopago';
+import PRODUTOS from '../produtos.js';
 
-module.exports = async (req, res) => {
-  if (req.method !== "POST") {
-    return res.status(405).json({ erro: "Método inválido" });
+// Inicializa o cliente do Mercado Pago usando a variável de ambiente
+const client = new MercadoPagoConfig({ 
+  accessToken: process.env.MP_ACCESS_TOKEN 
+});
+
+export default async function handler(req, res) {
+  // Permite apenas requisições POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ erro: 'Método não permitido' });
   }
 
   try {
-    const { itens } = req.body || {};
-    if (!Array.isArray(itens) || !itens.length) {
-      return res.status(400).json({ erro: "Carrinho vazio" });
+    const { itens } = req.body;
+
+    if (!itens || !Array.isArray(itens) || itens.length === 0) {
+      return res.status(400).json({ erro: 'Carrinho vazio ou formato inválido' });
     }
 
-    const items = itens.map(i => {
-      const p = PRODUTOS.find(p => p.id === i.id);
-      const qtd = Number(i.qtd);
+    // Mapeia e valida cada item em relação ao produtos.js
+    const itemsMercadoPago = [];
+    const resumoPedido = [];
 
-      const temTamanho = p && Array.isArray(p.tamanhos) && p.tamanhos.length > 0;
-      const tamanhoOk = temTamanho ? p.tamanhos.includes(i.tamanho) : !i.tamanho;
+    for (const item of itens) {
+      // Busca o produto real no catálogo
+      const produtoReal = PRODUTOS.find(p => p.id === item.id);
 
-      if (!p || !tamanhoOk || !Number.isInteger(qtd) || qtd < 1 || qtd > 20) {
-        throw new Error("Item inválido no carrinho");
+      if (!produtoReal) {
+        return res.status(400).json({ 
+          erro: `Item inválido no carrinho (ID: ${item.id}). Remova e adicione novamente.` 
+        });
       }
 
-      // Cor e estampa: obrigatórias se o produto as oferece, proibidas se não oferece
-      const temCor = Array.isArray(p.cores) && p.cores.length > 0;
-      const temEstampa = Array.isArray(p.estampas) && p.estampas.length > 0;
-      const corOk = temCor ? p.cores.some(c => c.nome === i.cor) : !i.cor;
-      const estampaOk = temEstampa ? p.estampas.includes(i.estampa) : !i.estampa;
-      if (!corOk || !estampaOk) {
-        throw new Error(`Item inválido: ${p.nome}. Remova do carrinho e adicione de novo, escolhendo cor e estampa.`);
-      }
+      const quantidade = Number(item.qtd || item.quantidade || 1);
+      const tamanho = item.tamanho || 'Único';
+      const estampa = item.estampa || 'Frente';
+      const cor = item.cor || 'Preta';
 
-      const title = [p.nome, i.tamanho, temCor ? i.cor : null, temEstampa ? `Estampa ${i.estampa}` : null]
-        .filter(Boolean)
-        .join(" - ");
+      // Cria um título detalhado para aparecer no extrato do Checkout e do Painel
+      const tituloDetalhado = `${produtoReal.nome} - Tam: ${tamanho} - Cor: ${cor} - Estampa: ${estampa}`;
 
-      return {
-        id: p.id,
-        title,
-        quantity: qtd,
-        unit_price: p.preco,
-        currency_id: "BRL"
-      };
-    });
-
-    // Extrai só o primeiro endereço válido, ignorando colchetes, parênteses, aspas e espaços
-    const bruto = process.env.SITE_URL || "https://testesite-chi-ochre.vercel.app";
-    const achado = bruto.match(/https?:\/\/[^\s\[\]()"']+/);
-    const site = (achado ? achado[0] : "https://testesite-chi-ochre.vercel.app").replace(/\/+$/, "");
-
-    if (!process.env.MP_ACCESS_TOKEN) {
-      return res.status(500).json({ erro: "MP_ACCESS_TOKEN não configurado na Vercel" });
-    }
-
-    // URLs simples, sem parâmetros: o Mercado Pago acrescenta o status sozinho
-    const retorno = `${site}/retorno.html`;
-    const back_urls = { success: retorno, pending: retorno, failure: retorno };
-
-    const r = await fetch("https://api.mercadopago.com/checkout/preferences", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN.trim()}`
-      },
-      body: JSON.stringify({ items, back_urls, auto_return: "approved" })
-    });
-
-    const d = await r.json();
-
-    if (!d.init_point) {
-      console.error("MP:", JSON.stringify(d), "back_urls:", JSON.stringify(back_urls));
-      return res.status(502).json({
-        erro: "MP: " + (d.message || "sem detalhes") + " | enviado: " + retorno
+      itemsMercadoPago.push({
+        id: produtoReal.id,
+        title: tituloDetalhado,
+        unit_price: Number(produtoReal.preco),
+        quantity: quantidade,
+        currency_id: 'BRL'
       });
+
+      resumoPedido.push(`${quantidade}x ${produtoReal.nome} (${tamanho}/${cor}/${estampa})`);
     }
 
-    return res.status(200).json({ url: d.init_point });
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ erro: "Erro interno: " + e.message });
+    // Cria a preferência de pagamento no Mercado Pago
+    const preference = new Preference(client);
+
+    const siteUrl = process.env.SITE_URL || 'https://' + req.headers.host;
+
+    const response = await preference.create({
+      body: {
+        items: itemsMercadoPago,
+        // O metadata salva o resumo do pedido legível dentro do seu painel do Mercado Pago
+        metadata: {
+          pedido_detalhes: resumoPedido.join(' | ')
+        },
+        external_reference: `PEDIDO-${Date.now()}`,
+        back_urls: {
+          success: `${siteUrl}/carrinho.html?status=sucesso`,
+          failure: `${siteUrl}/carrinho.html?status=falha`,
+          pending: `${siteUrl}/carrinho.html?status=pendente`
+        },
+        auto_return: 'approved'
+      }
+    });
+
+    // Retorna a URL de checkout (init_point)
+    return res.status(200).json({ url: response.init_point });
+
+  } catch (error) {
+    console.error('Erro ao criar preferência de pagamento:', error);
+    return res.status(500).json({ 
+      erro: 'Erro interno ao processar pagamento: ' + (error.message || 'Falha no servidor') 
+    });
   }
-};
+}
