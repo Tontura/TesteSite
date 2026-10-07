@@ -156,3 +156,9 @@ button.btn{font-family:'Archivo',sans-serif;cursor:pointer;}
 
 .btn-slider.prev { left: 12px; }
 .btn-slider.next { right: 12px; }
+
+
+.voando{position:fixed;z-index:999;pointer-events:none;object-fit:cover;border:1px solid var(--line);
+  transition:transform .8s cubic-bezier(.5,-.2,.8,.4),opacity .8s;}
+.cart-link.bump{animation:bump .4s;}
+@keyframes bump{50%{transform:scale(1.15);}}
