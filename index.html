@@ -6,7 +6,7 @@
 <title>ToonTura</title>
 
 <!-- Ícone da aba (Favicon) -->
-  <link rel="icon" type="image/png" href="img/icon.png">
+<link rel="icon" type="image/png" href="img/icon.png">
   
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -99,11 +99,12 @@ try {
     grade.innerHTML = l.length ? l.map(p => {
       const imgCapa = p.imagem || (p.imagens && p.imagens[0]) || '';
       
-      // Busca a imagem de hover
+      // BUSCA A IMAGEM DE HOVER CORRETA PARA QUALQUER PRODUTO:
+      // Se houver 4 ou mais fotos, pega exatamente a 4ª (índice 3: cam-01-4, cam-02-4, etc.)
+      // Senão, pega a última foto do array.
       let imgHover = imgCapa;
       if (p.imagens && p.imagens.length > 1) {
-        const fotoEspecial = p.imagens.find(i => i.includes('cam-01-4'));
-        imgHover = fotoEspecial || p.imagens[1] || p.imagens[p.imagens.length - 1];
+        imgHover = (p.imagens.length >= 4) ? p.imagens[3] : p.imagens[p.imagens.length - 1];
       }
 
       return `<a class="card" href="produto.html?id=${p.id}">
