@@ -1,8 +1,8 @@
 // api/criar-pagamento.js
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 const PRODUTOS = require('../produtos.js');
+const { cotarFrete } = require('./_superfrete');
 
-// Monta a URL base do site de forma segura (ignora colchetes, aspas, espaços, caminho etc.)
 function baseDoSite(req) {
   const bruto = String(process.env.SITE_URL || '');
   const achado = bruto.match(/https?:\/\/[^\s\[\]()"'<>]+/);
@@ -18,18 +18,28 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { itens } = req.body || {};
+    const { itens, cliente, freteId } = req.body || {};
 
     if (!itens || !Array.isArray(itens) || itens.length === 0) {
       return res.status(400).json({ erro: 'Carrinho vazio ou formato inválido' });
     }
-
     if (!process.env.MP_ACCESS_TOKEN) {
       return res.status(500).json({ erro: 'MP_ACCESS_TOKEN não configurado na Vercel' });
     }
 
+    // Dados do cliente
+    const c = cliente || {};
+    const whats = String(c.whatsapp || '').replace(/\D/g, '');
+    const cep = String(c.cep || '').replace(/\D/g, '');
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email || '');
+    if (!c.nome || !emailOk || whats.length < 10 || cep.length !== 8 ||
+        !c.rua || !c.numero || !c.uf || String(c.uf).length !== 2) {
+      return res.status(400).json({ erro: 'Preencha nome, e-mail, WhatsApp e o endereço completo.' });
+    }
+
     const itemsMercadoPago = [];
     const resumoPedido = [];
+    const itensCotacao = [];
 
     for (const item of itens) {
       const p = PRODUTOS.find(x => x.id === item.id);
@@ -48,7 +58,7 @@ module.exports = async function handler(req, res) {
       // Cor e estampa: obrigatórias se o produto as oferece, proibidas se não oferece
       const temCor = Array.isArray(p.cores) && p.cores.length > 0;
       const temEstampa = Array.isArray(p.estampas) && p.estampas.length > 0;
-      const corOk = temCor ? p.cores.some(c => c.nome === item.cor) : !item.cor;
+      const corOk = temCor ? p.cores.some(x => x.nome === item.cor) : !item.cor;
       const estampaOk = temEstampa ? p.estampas.includes(item.estampa) : !item.estampa;
       if (!corOk || !estampaOk) {
         return res.status(400).json({
@@ -67,20 +77,26 @@ module.exports = async function handler(req, res) {
         quantity: quantidade,
         currency_id: 'BRL'
       });
+      itensCotacao.push({ id: p.id, qtd: quantidade });
 
       const detalhe = [item.tamanho, temCor ? item.cor : null, temEstampa ? item.estampa : null]
         .filter(Boolean).join('/');
       resumoPedido.push(`${quantidade}x ${p.nome} (${detalhe})`);
     }
 
+    // Frete recotado no servidor: nunca confiamos no valor vindo do navegador
+    const opcoes = await cotarFrete(cep, itensCotacao);
+    const escolhida = opcoes.find(o => String(o.id) === String(freteId));
+    if (!escolhida) {
+      return res.status(400).json({ erro: 'Opção de frete inválida. Calcule o frete de novo.' });
+    }
+    const frete = escolhida.preco;
+
     const baseUrl = baseDoSite(req);
     try { new URL(baseUrl); } catch (e) {
       return res.status(500).json({ erro: `SITE_URL inválida: "${baseUrl}"` });
     }
-
-    // URLs simples, sem parâmetros: o Mercado Pago acrescenta o status sozinho
-    const retorno = `${baseUrl}/carrinho.html`;
-    const back_urls = { success: retorno, failure: retorno, pending: retorno };
+    const retorno = `${baseUrl}/retorno.html`;
 
     const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN.trim() });
     const preference = new Preference(client);
@@ -88,9 +104,24 @@ module.exports = async function handler(req, res) {
     const response = await preference.create({
       body: {
         items: itemsMercadoPago,
-        metadata: { pedido_detalhes: resumoPedido.join(' | ') },
+        shipments: {
+          cost: frete,
+          mode: 'not_specified',
+          receiver_address: { zip_code: cep, street_name: c.rua, street_number: String(c.numero) }
+        },
+        payer: {
+          name: c.nome,
+          email: c.email,
+          phone: { area_code: whats.slice(0, 2), number: whats.slice(2) }
+        },
+        metadata: {
+          pedido_detalhes: resumoPedido.join(' | '),
+          frete: `${escolhida.nome} - R$ ${frete.toFixed(2)}`,
+          whatsapp: whats,
+          endereco: `${c.rua}, ${c.numero} ${c.complemento || ''} - ${c.bairro}, ${c.cidade}/${c.uf} - CEP ${cep}`
+        },
         external_reference: `PEDIDO-${Date.now()}`,
-        back_urls,
+        back_urls: { success: retorno, failure: retorno, pending: retorno },
         auto_return: 'approved'
       }
     });
