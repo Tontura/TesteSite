@@ -4,14 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Carrinho | ToonTura</title>
-
-<!-- Ícone da aba (Favicon) -->
-  <link rel="icon" type="image/png" href="img/icon.png">
-  
+<link rel="icon" type="image/png" href="img/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<style>
+  .dados{display:grid;gap:10px;max-width:440px;margin:28px 0;}
+  .dados h3{margin:12px 0 0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim);}
+  .dados input{padding:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:400 14px 'Archivo',sans-serif;}
+  .dados .linha{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  #fretes{font-size:14px;}
+  #fretes label{display:block;padding:10px 12px;border:1px solid var(--line);margin:6px 0;cursor:pointer;}
+</style>
 </head>
 <body>
 
@@ -28,6 +33,30 @@
 <main class="wrap page">
   <h1>Carrinho</h1>
   <div id="itens"></div>
+
+  <div class="dados">
+    <h3>Seus dados</h3>
+    <input id="c-nome" placeholder="Nome completo">
+    <input id="c-email" type="email" placeholder="E-mail (você receberá a confirmação aqui)">
+    <input id="c-whats" placeholder="WhatsApp com DDD, ex: 35 99999-9999">
+
+    <h3>Endereço de entrega</h3>
+    <input id="c-cep" placeholder="CEP" maxlength="9">
+    <input id="c-rua" placeholder="Rua">
+    <div class="linha">
+      <input id="c-numero" placeholder="Número">
+      <input id="c-comp" placeholder="Complemento">
+    </div>
+    <input id="c-bairro" placeholder="Bairro">
+    <div class="linha">
+      <input id="c-cidade" placeholder="Cidade">
+      <input id="c-uf" placeholder="UF" maxlength="2">
+    </div>
+
+    <h3>Frete</h3>
+    <div id="fretes">Informe o CEP para ver as opções de frete.</div>
+  </div>
+
   <div class="total"><span>Total</span><span id="total">R$ 0,00</span></div>
   <button class="btn" id="pagar">Pagar com Mercado Pago</button>
   <p id="msg"></p>
@@ -43,59 +72,54 @@
 <script src="produtos.js"></script>
 <script src="loja.js"></script>
 <script>
+let subtotal = 0;
+let freteSel = null;
+
 function obterCarrinho() {
   if (typeof getCarrinho === 'function') return getCarrinho();
   return JSON.parse(localStorage.getItem("carrinho") || "[]");
 }
-
 function guardarCarrinho(carrinho) {
-  if (typeof setCarrinho === 'function') {
-    setCarrinho(carrinho);
-  } else {
-    localStorage.setItem("carrinho", JSON.stringify(carrinho));
-  }
+  if (typeof setCarrinho === 'function') setCarrinho(carrinho);
+  else localStorage.setItem("carrinho", JSON.stringify(carrinho));
 }
-
 function obterTotalItens(carrinho) {
   return carrinho.reduce((acc, item) => acc + Number(item.qtd || item.quantidade || 1), 0);
 }
-
 function atualizarContadorHeader() {
-  const carrinho = obterCarrinho();
   const contador = document.getElementById("contador");
-  if (contador) {
-    contador.innerText = obterTotalItens(carrinho);
-  }
+  if (contador) contador.innerText = obterTotalItens(obterCarrinho());
 }
-
 function formatarPreco(valor) {
   if (typeof brl === 'function') return brl(valor);
   return "R$ " + Number(valor).toFixed(2).replace(".", ",");
 }
+function atualizarTotal() {
+  document.getElementById("total").textContent =
+    formatarPreco(subtotal + (freteSel ? freteSel.preco : 0));
+}
 
 function render() {
   const carrinho = obterCarrinho();
-  let total = 0;
-
+  subtotal = 0;
   const containerItens = document.getElementById("itens");
 
   if (!carrinho.length) {
     containerItens.innerHTML = "<p>Seu carrinho está vazio.</p>";
-    document.getElementById("total").textContent = formatarPreco(0);
     document.getElementById("pagar").disabled = true;
+    atualizarTotal();
     atualizarContadorHeader();
     return;
   }
 
   containerItens.innerHTML = carrinho.map((item, index) => {
     const prodRef = typeof PRODUTOS !== 'undefined' ? PRODUTOS.find(p => p.id === item.id) : null;
-    
     const preco = item.preco || (prodRef ? prodRef.preco : 0);
     const qtd = Number(item.qtd || item.quantidade || 1);
     const nome = item.nome || (prodRef ? prodRef.nome : 'Produto');
     const imagem = item.imagem || (prodRef ? (prodRef.imagem || (prodRef.imagens && prodRef.imagens[0])) : '');
 
-    total += preco * qtd;
+    subtotal += preco * qtd;
 
     const detalhes = [
       `Tam. ${item.tamanho || 'Único'}`,
@@ -108,17 +132,13 @@ function render() {
     return `
       <div class="item">
         <img src="${imagem}" alt="${nome}">
-        <div>
-          <strong>${nome}</strong><br>
-          ${detalhes}
-        </div>
+        <div><strong>${nome}</strong><br>${detalhes}</div>
         <button onclick="remover(${index})">Remover</button>
-      </div>
-    `;
+      </div>`;
   }).join("");
 
-  document.getElementById("total").textContent = formatarPreco(total);
   document.getElementById("pagar").disabled = false;
+  atualizarTotal();
   atualizarContadorHeader();
 }
 
@@ -127,36 +147,97 @@ function remover(index) {
   carrinho.splice(index, 1);
   guardarCarrinho(carrinho);
   render();
+  calcularFrete();   // o peso mudou, então recotamos
 }
+
+async function calcularFrete() {
+  const cep = document.getElementById("c-cep").value.replace(/\D/g, "");
+  const box = document.getElementById("fretes");
+  freteSel = null;
+  atualizarTotal();
+  if (cep.length !== 8 || !obterCarrinho().length) return;
+
+  box.textContent = "Calculando frete...";
+  try {
+    const itens = obterCarrinho().map(i => ({ id: i.id, qtd: Number(i.qtd || i.quantidade || 1) }));
+    const r = await fetch("/api/frete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cep, itens })
+    });
+    const d = await r.json();
+    if (!r.ok || !d.opcoes || !d.opcoes.length) {
+      box.textContent = d.erro || "Nenhuma opção de frete para este CEP.";
+      return;
+    }
+    box.innerHTML = d.opcoes.map((o, i) => `
+      <label><input type="radio" name="frete" value="${i}"> ${o.nome}: ${formatarPreco(o.preco)} (${o.prazo} dias úteis)</label>
+    `).join("");
+    box.querySelectorAll("input").forEach(el => {
+      el.onchange = () => { freteSel = d.opcoes[Number(el.value)]; atualizarTotal(); };
+    });
+  } catch (e) {
+    box.textContent = "Erro ao calcular o frete.";
+  }
+}
+
+// CEP: preenche o endereço (ViaCEP) e calcula o frete
+document.getElementById("c-cep").addEventListener("blur", async () => {
+  const cep = document.getElementById("c-cep").value.replace(/\D/g, "");
+  if (cep.length !== 8) return;
+  try {
+    const d = await (await fetch(`https://viacep.com.br/ws/${cep}/json/`)).json();
+    if (!d.erro) {
+      document.getElementById("c-rua").value = d.logradouro;
+      document.getElementById("c-bairro").value = d.bairro;
+      document.getElementById("c-cidade").value = d.localidade;
+      document.getElementById("c-uf").value = d.uf;
+    }
+  } catch (e) {}
+  calcularFrete();
+});
 
 document.getElementById("pagar").onclick = async () => {
   const btn = document.getElementById("pagar");
   const msg = document.getElementById("msg");
+  const v = id => document.getElementById(id).value.trim();
+
+  const cliente = {
+    nome: v("c-nome"), email: v("c-email"), whatsapp: v("c-whats"),
+    cep: v("c-cep"), rua: v("c-rua"), numero: v("c-numero"), complemento: v("c-comp"),
+    bairro: v("c-bairro"), cidade: v("c-cidade"), uf: v("c-uf").toUpperCase()
+  };
+
+  if (!cliente.nome || !cliente.email || !cliente.whatsapp || !cliente.cep ||
+      !cliente.rua || !cliente.numero || cliente.uf.length !== 2) {
+    msg.textContent = "Preencha nome, e-mail, WhatsApp e o endereço completo.";
+    return;
+  }
+  if (!freteSel) {
+    msg.textContent = "Escolha uma opção de frete.";
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = "Aguarde...";
   msg.textContent = "";
 
   try {
-    const carrinhoBruto = obterCarrinho();
-    
-    // Formata os itens com todos os campos exigidos pela API do Mercado Pago
-    const itensFormatados = carrinhoBruto.map(item => ({
+    const itensFormatados = obterCarrinho().map(item => ({
       id: item.id,
       qtd: Number(item.qtd || item.quantidade || 1),
       tamanho: item.tamanho || 'Único',
-      estampa: item.estampa || 'Frente',
-      cor: item.cor || 'Preta'
+      estampa: item.estampa || null,
+      cor: item.cor || null
     }));
 
     const r = await fetch("/api/criar-pagamento", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ itens: itensFormatados })
+      body: JSON.stringify({ itens: itensFormatados, cliente, freteId: freteSel.id })
     });
-
     const d = await r.json();
     if (!r.ok || !d.url) throw new Error(d.erro || "Erro interno ao processar pagamento");
-    
     location.href = d.url;
   } catch (e) {
     msg.textContent = "Erro: " + e.message;
