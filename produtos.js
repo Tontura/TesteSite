@@ -10,7 +10,7 @@ const ESTAMPAS_CAMISETA = ["Frente", "Costas"];
 const PRODUTOS = [
   {
     id: "cam-01",
-    nome: "Camiseta 01",
+    nome: "Sem Sinal Preta",
     categoria: "camisetas",
     preco: 79.9,
     imagem: "img/cam-01.png",
@@ -21,11 +21,11 @@ const PRODUTOS = [
   },
   {
     id: "cam-02",
-    nome: "Camiseta 02",
+    nome: "Sem Sinal Branca",
     categoria: "camisetas",
     preco: 79.9,
     imagem: "img/cam-02.png",
-    imagens: ["img/cam-02.png"],
+    imagens: ["img/cam-02.png","img/cam-02-2.png","img/cam-02-3.png","img/cam-02-4.png"],
     tamanhos: ["P", "M", "G", "GG"],
     cores: CORES_CAMISETA,
     estampas: ESTAMPAS_CAMISETA
