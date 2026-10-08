@@ -12,37 +12,55 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+
+
+
+
+
+
+
+
 </head>
 <body>
 
-<header>
-  <div class="wrap nav">
-    <a href="index.html"><img src="img/logo.png" alt="ToonTura"></a>
-    <nav class="navlinks">
-      <a href="index.html">Loja</a>
-      <a class="cart-link" href="carrinho.html">Carrinho <span id="contador">0</span></a>
-    </nav>
-  </div>
-</header>
-
+@@ -28,6 +33,30 @@
 <main class="wrap page">
   <h1>Carrinho</h1>
   <div id="itens"></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   <div class="total"><span>Total</span><span id="total">R$ 0,00</span></div>
   <button class="btn" id="pagar">Pagar com Mercado Pago</button>
   <p id="msg"></p>
-</main>
-
-<footer>
-  <div class="wrap foot-row">
-    <img src="img/logo.png" alt="ToonTura">
-    <div class="foot-meta">© 2026 ToonTura</div>
-  </div>
-</footer>
-
+@@ -43,59 +72,54 @@
 <script src="produtos.js"></script>
 <script src="loja.js"></script>
 <script>
+
+
+
 function obterCarrinho() {
   if (typeof getCarrinho === 'function') return getCarrinho();
   return JSON.parse(localStorage.getItem("carrinho") || "[]");
@@ -73,6 +91,10 @@ function formatarPreco(valor) {
   return "R$ " + Number(valor).toFixed(2).replace(".", ",");
 }
 
+
+
+
+
 function render() {
   const carrinho = obterCarrinho();
   let total = 0;
@@ -83,6 +105,7 @@ function render() {
     containerItens.innerHTML = "<p>Seu carrinho está vazio.</p>";
     document.getElementById("total").textContent = formatarPreco(0);
     document.getElementById("pagar").disabled = true;
+
     atualizarContadorHeader();
     return;
   }
@@ -99,12 +122,7 @@ function render() {
 
     const detalhes = [
       `Tam. ${item.tamanho || 'Único'}`,
-      item.estampa ? `Estampa: ${item.estampa}` : null,
-      item.cor ? `Cor: ${item.cor}` : null,
-      `${qtd}x`,
-      formatarPreco(preco)
-    ].filter(Boolean).join(" · ");
-
+@@ -108,17 +132,13 @@
     return `
       <div class="item">
         <img src="${imagem}" alt="${nome}">
@@ -119,19 +137,85 @@ function render() {
 
   document.getElementById("total").textContent = formatarPreco(total);
   document.getElementById("pagar").disabled = false;
+
   atualizarContadorHeader();
 }
 
-function remover(index) {
-  const carrinho = obterCarrinho();
+@@ -127,45 +147,106 @@
   carrinho.splice(index, 1);
   guardarCarrinho(carrinho);
   render();
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 document.getElementById("pagar").onclick = async () => {
   const btn = document.getElementById("pagar");
   const msg = document.getElementById("msg");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   btn.disabled = true;
   btn.textContent = "Aguarde...";
   msg.textContent = "";
