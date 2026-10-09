@@ -24,7 +24,6 @@
       <a href="index.html">Loja</a>
       <a href="index.html#manifesto">Manifesto</a>
       <a href="index.html#contato">Contato</a>
-      <a href="conta.html">Conta</a>
       <a class="cart-link" href="carrinho.html">Carrinho <span id="contador">0</span></a>
     </nav>
   </div>
@@ -45,7 +44,7 @@
 <script src="loja.js"></script>
 <script>
 try {
-  // Função para calcular total de itens sem dar NaN
+  // Soma os itens do carrinho sem dar NaN
   function obterTotalItens(carrinho) {
     return carrinho.reduce((acc, item) => acc + Number(item.qtd || item.quantidade || 1), 0);
   }
@@ -62,138 +61,4 @@ try {
 
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
-  const produto = PRODUTOS.find(p => p.id === id) || PRODUTOS[0];
-
-  if (!produto) {
-    document.getElementById("detalhe-container").innerHTML = "<p>Produto não encontrado.</p>";
-  } else {
-    const listaImagens = (produto.imagens && produto.imagens.length > 0) 
-      ? produto.imagens 
-      : [produto.imagem];
-
-    let indiceAtual = 0;
-    let tamanhoSelecionado = produto.tamanhos ? produto.tamanhos[0] : 'Único';
-    let estampaSelecionada = produto.estampas ? produto.estampas[0] : (ESTAMPAS_CAMISETA ? ESTAMPAS_CAMISETA[0] : 'Frente');
-    let corSelecionada = (produto.cores && produto.cores.length > 0) ? produto.cores[0].nome : 'Preta';
-
-    const precoFormatado = typeof brl === 'function' ? brl(produto.preco) : `R$ ${produto.preco.toFixed(2).replace('.', ',')}`;
-
-    document.getElementById("detalhe-container").innerHTML = `
-      <div class="galeria">
-        <div class="galeria-slider">
-          ${listaImagens.length > 1 ? '<button class="btn-slider prev" id="btn-prev">❮</button>' : ''}
-          <div class="slider-track" id="slider-track">
-            ${listaImagens.map((img, i) => `<img src="${img}" alt="${produto.nome} - Foto${i + 1}">`).join('')}
-          </div>
-          ${listaImagens.length > 1 ? '<button class="btn-slider next" id="btn-next">❯</button>' : ''}
-        </div>
-        
-        ${listaImagens.length > 1 ? `
-          <div class="miniaturas" id="miniaturas">
-            ${listaImagens.map((img, i) => `
-              <button class="${i === 0 ? 'ativo' : ''}" onclick="mudarFoto(${i})">
-                <img src="${img}" alt="Miniatura ${i + 1}">
-              </button>
-            `).join('')}
-          </div>
-        ` : ''}
-      </div>
-
-      <div class="info-produto">
-        <h1>${produto.nome}</h1>
-        <p class="preco">${precoFormatado}</p>
-
-        ${produto.estampas ? `
-          <div class="opcao">
-            <h4>Estampa</h4>
-            <div class="tamanhos" id="grupo-estampas">
-              ${produto.estampas.map((e, i) => `
-                <button type="button" class="${i === 0 ? 'ativo' : ''}" onclick="selecionarEstampa('${e}', this)">${e}</button>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
-
-        ${produto.tamanhos ? `
-          <div class="opcao">
-            <h4>Tamanho</h4>
-            <div class="tamanhos" id="grupo-tamanhos">
-              ${produto.tamanhos.map((t, i) => `
-                <button type="button" class="${i === 0 ? 'ativo' : ''}" onclick="selecionarTamanho('${t}', this)">${t}</button>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
-
-        <button class="btn" id="add">Adicionar ao carrinho</button>
-      </div>
-    `;
-
-    const track = document.getElementById("slider-track");
-    const total = listaImagens.length;
-
-    window.mudarFoto = function(index) {
-      if (index < 0) index = total - 1;
-      if (index >= total) index = 0;
-      indiceAtual = index;
-
-      track.style.transform = `translateX(-${indiceAtual * 100}%)`;
-
-      const thumbs = document.querySelectorAll(".miniaturas button");
-      thumbs.forEach((t, i) => {
-        t.classList.toggle("ativo", i === indiceAtual);
-      });
-    };
-
-    const btnPrev = document.getElementById("btn-prev");
-    const btnNext = document.getElementById("btn-next");
-    if (btnPrev && btnNext) {
-      btnPrev.onclick = () => mudarFoto(indiceAtual - 1);
-      btnNext.onclick = () => mudarFoto(indiceAtual + 1);
-    }
-
-    window.selecionarTamanho = function(tamanho, btn) {
-      tamanhoSelecionado = tamanho;
-      document.querySelectorAll("#grupo-tamanhos button").forEach(b => b.classList.remove("ativo"));
-      btn.classList.add("ativo");
-    };
-
-    window.selecionarEstampa = function(estampa, btn) {
-      estampaSelecionada = estampa;
-      document.querySelectorAll("#grupo-estampas button").forEach(b => b.classList.remove("ativo"));
-      btn.classList.add("ativo");
-    };
-
-    // Ação do Botão Adicionar ao Carrinho
-    document.getElementById("add").onclick = () => {
-      let carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
-
-      const novoItem = {
-        id: produto.id,
-        nome: produto.nome,
-        preco: produto.preco,
-        imagem: produto.imagem || (produto.imagens && produto.imagens[0]),
-        tamanho: tamanhoSelecionado || 'Único',
-        estampa: estampaSelecionada || 'Frente',
-        cor: corSelecionada || 'Preta',
-        qtd: 1,
-        quantidade: 1
-      };
-
-      carrinho.push(novoItem);
-      localStorage.setItem("carrinho", JSON.stringify(carrinho));
-
-      // Animação: a foto atual voa até o carrinho (função definida em loja.js)
-      if (typeof voarParaCarrinho === 'function') {
-        voarParaCarrinho(track.children[indiceAtual]);
-      }
-
-      atualizarContadorHeader();
-    };
-  }
-} catch (e) {
-  document.getElementById("detalhe-container").innerHTML = "<p>Erro: " + e.message + "</p>";
-}
-</script>
-</body>
-</html>
+  const produto = PRODUTOS.find(p => p.id === id) ||
