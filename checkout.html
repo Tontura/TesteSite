@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finalizar compra | ToonTura</title>
+<link rel="icon" type="image/png" href="img/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+<style>
+  #form-checkout{display:grid;gap:12px;max-width:480px;margin:24px 0;}
+  #form-checkout h3{margin:14px 0 0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim);}
+  #form-checkout label{display:block;margin-bottom:6px;font-size:13px;font-weight:600;}
+  #form-checkout input[type=text],#form-checkout input[type=email]{width:100%;min-height:46px;padding:0 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:400 14px 'Archivo',sans-serif;}
+  .secure-input{min-height:46px;border:1px solid var(--line);background:#fff;overflow:hidden;}
+  .secure-input iframe{display:block !important;width:100% !important;height:100% !important;border:0 !important;}
+  .linha{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .resumo{max-width:480px;border:1px solid var(--line);padding:14px 16px;font-size:14px;}
+  .resumo div{display:flex;justify-content:space-between;padding:3px 0;}
+  .resumo .tot{font-weight:800;border-top:1px solid var(--line);margin-top:6px;padding-top:8px;}
+  .opcoes-entrega{display:grid;gap:8px;}
+  .opcao-box{display:block;padding:12px;border:1px solid var(--line);cursor:pointer;font-size:14px;}
+  .opcao-box small{display:block;color:var(--ink-dim);margin-top:2px;}
+  .opcao-box input{margin-right:8px;}
+  #painel-envio,#painel-retirada{display:grid;gap:12px;}
+  #fretes,#pontos{font-size:14px;}
+  #erro-init,#resultado{max-width:480px;margin-top:14px;font-size:14px;}
+  #erro-init{color:#c0392b;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a href="index.html"><img src="img/logo.png" alt="ToonTura"></a>
+    <nav class="navlinks">
+      <a href="index.html">Loja</a>
+      <a class="cart-link" href="carrinho.html">Carrinho <span id="contador">0</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap page">
+  <h1>Finalizar compra</h1>
+
+  <div class="resumo" id="resumo"></div>
+  <div id="erro-init" role="alert" hidden></div>
+
+  <form id="form-checkout">
+    <h3>Seus dados</h3>
+    <input type="text" id="c-nome" placeholder="Nome completo" autocomplete="name" required>
+    <div>
+      <label for="form-checkout__cardholderEmail">E-mail</label>
+      <input type="email" id="form-checkout__cardholderEmail" autocomplete="email" required>
+    </div>
+    <input type="text" id="c-whats" placeholder="WhatsApp com DDD, ex: 35 99999-9999" inputmode="numeric" required>
+
+    <h3>Como você quer receber?</h3>
+    <div class="opcoes-entrega">
+      <label class="opcao-box">
+        <input type="radio" name="modo" value="envio" checked> Receber em casa
+        <small>Frete calculado pelo seu CEP</small>
+      </label>
+      <label class="opcao-box">
+        <input type="radio" name="modo" value="retirada"> Retirar em mãos
+        <small>Grátis, em um dos pontos de retirada</small>
+      </label>
+    </div>
+
+    <div id="painel-envio">
+      <input type="text" id="c-cep" placeholder="CEP" maxlength="9" inputmode="numeric">
+      <input type="text" id="c-rua" placeholder="Rua">
+      <div class="linha">
+        <input type="text" id="c-numero" placeholder="Número">
+        <input type="text" id="c-comp" placeholder="Complemento">
+      </div>
+      <input type="text" id="c-bairro" placeholder="Bairro">
+      <div class="linha">
+        <input type="text" id="c-cidade" placeholder="Cidade">
+        <input type="text" id="c-uf" placeholder="UF" maxlength="2">
+      </div>
+      <div id="fretes">Informe o CEP para ver as opções de frete.</div>
+    </div>
+
+    <div id="painel-retirada" hidden>
+      <div id="pontos"></div>
+    </div>
+
+    <h3>Cartão de crédito</h3>
+    <div>
+      <label id="lbl-num">Número do cartão</label>
+      <div id="form-checkout__cardNumber" class="secure-input"></div>
+    </div>
+    <div class="linha">
+      <div>
+        <label id="lbl-exp">Validade (MM/AA)</label>
+        <div id="form-checkout__expirationDate" class="secure-input"></div>
+      </div>
+      <div>
+        <label id="lbl-cvv">Código de segurança</label>
+        <div id="form-checkout__securityCode" class="secure-input"></div>
+      </div>
+    </div>
+    <div>
+      <label for="form-checkout__cardholderName">Nome no cartão</label>
+      <input type="text" id="form-checkout__cardholderName" autocomplete="cc-name" required>
+    </div>
+    <div>
+      <label for="form-checkout__identificationNumber">CPF do titular</label>
+      <input type="text" id="form-checkout__identificationNumber" inputmode="numeric" autocomplete="off" required>
+    </div>
+
+    <!-- Campos que o SDK exige existir, mesmo ocultos -->
+    <select id="form-checkout__issuer" hidden aria-hidden="true" tabindex="-1"></select>
+    <select id="form-checkout__installments" hidden aria-hidden="true" tabindex="-1"></select>
+    <select id="form-checkout__identificationType" hidden aria-hidden="true" tabindex="-1"></select>
+
+    <button type="submit" class="btn" id="form-checkout__submit">Pagar</button>
+  </form>
+
+  <div id="resultado" role="status" aria-live="polite"></div>
+</main>
+
+<footer>
+  <div class="wrap foot-row">
+    <img src="img/logo.png" alt="ToonTura">
+    <div class="foot-meta">© 2026 ToonTura</div>
+  </div>
+</footer>
+
+<script src="produtos.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const brlFmt = v => "R$ " + Number(v).toFixed(2).replace(".", ",");
+const carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
+
+let subtotal = 0;
+let modo = "envio";       // "envio" ou "retirada"
+let freteSel = null;      // opção de frete escolhida
+let pontoSel = null;      // id do ponto de retirada
+
+function mostrarErroInit(msg) {
+  const el = $("erro-init");
+  el.hidden = false;
+  el.textContent = msg;
+}
+
+function valorEntrega() {
+  if (modo === "retirada") return 0;
+  return freteSel ? freteSel.preco : null;   // null = ainda não escolhido
+}
+
+function atualizarResumo() {
+  const ent = valorEntrega();
+  const textoEnt = modo === "retirada"
+    ? "Retirada (grátis)"
+    : (ent === null ? "escolha o frete" : brlFmt(ent));
+  $("resumo").innerHTML = `
+    <div><span>Produtos</span><span>${brlFmt(subtotal)}</span></div>
+    <div><span>Entrega</span><span>${textoEnt}</span></div>
+    <div class="tot"><span>Total</span><span>${brlFmt(subtotal + (ent || 0))}</span></div>`;
+}
+
+async function calcularFrete() {
+  const cep = $("c-cep").value.replace(/\D/g, "");
+  const box = $("fretes");
+  freteSel = null;
+  atualizarResumo();
+  if (cep.length !== 8) return;
+
+  box.textContent = "Calculando frete...";
+  try {
+    const itens = carrinho.map(i => ({ id: i.id, qtd: Number(i.qtd || i.quantidade || 1) }));
+    const r = await fetch("/api/frete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cep, itens })
+    });
+    const d = await r.json();
+    if (!r.ok || !d.opcoes || !d.opcoes.length) {
+      box.textContent = d.erro || "Nenhuma opção de frete para este CEP.";
+      return;
+    }
+    box.innerHTML = d.opcoes.map((o, i) => `
+      <label class="opcao-box">
+        <input type="radio" name="frete" value="${i}"> ${o.nome}: ${brlFmt(o.preco)}
+        <small>${o.prazo} dias úteis</small>
+      </label>`).join("");
+    box.querySelectorAll("input").forEach(el => {
+      el.onchange = () => { freteSel = d.opcoes[Number(el.value)]; atualizarResumo(); };
+    });
+  } catch (e) {
+    box.textContent = "Erro ao calcular o frete.";
+  }
+}
+
+function trocarModo(novo) {
+  modo = novo;
+  $("painel-envio").hidden = modo !== "envio";
+  $("painel-retirada").hidden = modo !== "retirada";
+  atualizarResumo();
+}
+
+async function iniciar() {
+  const contador = $("contador");
+  if (contador) contador.innerText = carrinho.reduce((a, i) => a + Number(i.qtd || i.quantidade || 1), 0);
+
+  if (!carrinho.length) {
+    $("resumo").innerHTML = "Seu carrinho está vazio. <a href='index.html'>Voltar à loja</a>";
+    $("form-checkout").hidden = true;
+    return;
+  }
+
+  // Chave pública e pontos de retirada vêm do servidor
+  let cfg;
+  try {
+    const r = await fetch("/api/mp-config", { cache: "no-store" });
+    cfg = await r.json();
+    if (!r.ok || !cfg.publicKey) throw new Error(cfg.error || "Chave pública ausente");
+  } catch (e) {
+    mostrarErroInit("Não foi possível carregar o pagamento: " + e.message);
+    return;
+  }
+
+  // Subtotal (só exibição: o servidor recalcula tudo)
+  carrinho.forEach(i => {
+    const ref = PRODUTOS.find(p => p.id === i.id);
+    subtotal += Number(i.preco || (ref && ref.preco) || 0) * Number(i.qtd || i.quantidade || 1);
+  });
+  atualizarResumo();
+
+  // Pontos de retirada
+  $("pontos").innerHTML = (cfg.pontos || []).map(p => `
+    <label class="opcao-box">
+      <input type="radio" name="ponto" value="${p.id}"> ${p.nome}
+      <small>${p.detalhe || ""}</small>
+    </label>`).join("");
+  document.querySelectorAll("input[name=ponto]").forEach(el => {
+    el.onchange = () => { pontoSel = el.value; };
+  });
+
+  document.querySelectorAll("input[name=modo]").forEach(el => {
+    el.onchange = () => trocarModo(el.value);
+  });
+
+  // CEP preenche o endereço e calcula o frete
+  $("c-cep").addEventListener("blur", async () => {
+    const cep = $("c-cep").value.replace(/\D/g, "");
+    if (cep.length !== 8) return;
+    try {
+      const d = await (await fetch(`https://viacep.com.br/ws/${cep}/json/`)).json();
+      if (!d.erro) {
+        $("c-rua").value = d.logradouro; $("c-bairro").value = d.bairro;
+        $("c-cidade").value = d.localidade; $("c-uf").value = d.uf;
+      }
+    } catch (e) {}
+    calcularFrete();
+  });
+
+  if (typeof MercadoPago === "undefined") {
+    mostrarErroInit("O SDK do Mercado Pago não carregou. Se você usa bloqueador de anúncios, desative-o nesta página.");
+    return;
+  }
+
+  const mp = new MercadoPago(cfg.publicKey);
+  const cardForm = mp.cardForm({
+    amount: subtotal.toFixed(2),
+    iframe: true,
+    form: {
+      id: "form-checkout",
+      cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do cartão" },
+      expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/AA" },
+      securityCode: { id: "form-checkout__securityCode", placeholder: "CVV" },
+      cardholderName: { id: "form-checkout__cardholderName" },
+      issuer: { id: "form-checkout__issuer" },
+      installments: { id: "form-checkout__installments" },
+      identificationType: { id: "form-checkout__identificationType" },
+      identificationNumber: { id: "form-checkout__identificationNumber" },
+      cardholderEmail: { id: "form-checkout__cardholderEmail" }
+    },
+    callbacks: {
+      onFormMounted: err => { if (err) mostrarErroInit("Erro ao montar o formulário de cartão."); },
+      onSubmit: async event => {
+        event.preventDefault();
+        const btn = $("form-checkout__submit");
+        const out = $("resultado");
+        const v = id => $(id).value.trim();
+
+        // Validação da entrega
+        if (modo === "envio") {
+          if (!v("c-cep") || !v("c-rua") || !v("c-numero") || v("c-uf").length !== 2) {
+            out.textContent = "Preencha o endereço de entrega completo.";
+            return;
+          }
+          if (!freteSel) { out.textContent = "Escolha uma opção de frete."; return; }
+        } else if (!pontoSel) {
+          out.textContent = "Escolha um ponto de retirada.";
+          return;
+        }
+
+        const { token, paymentMethodId, identificationNumber, cardholderEmail } = cardForm.getCardFormData();
+
+        btn.disabled = true; btn.textContent = "Processando...";
+        out.textContent = "Processando pagamento, aguarde...";
+
+        try {
+          const itensFmt = carrinho.map(i => ({
+            id: i.id,
+            qtd: Number(i.qtd || i.quantidade || 1),
+            tamanho: i.tamanho || "Único",
+            estampa: i.estampa || null,
+            cor: i.cor || null
+          }));
+
+          const r = await fetch("/api/process-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              token, paymentMethodId,
+              itens: itensFmt,
+              cliente: {
+                nome: v("c-nome"), email: cardholderEmail, cpf: identificationNumber,
+                whatsapp: v("c-whats"),
+                cep: v("c-cep"), rua: v("c-rua"), numero: v("c-numero"), complemento: v("c-comp"),
+                bairro: v("c-bairro"), cidade: v("c-cidade"), uf: v("c-uf").toUpperCase()
+              },
+              entrega: modo === "retirada"
+                ? { tipo: "retirada", pontoId: pontoSel }
+                : { tipo: "envio", freteId: freteSel.id }
+            })
+          });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.erro || "Erro ao processar pagamento");
+
+          if (d.status === "processed" || d.status === "approved") {
+            localStorage.removeItem("carrinho");
+            out.innerHTML = `<strong>Pagamento aprovado!</strong><br>Número do pedido: ${d.id}<br>Guarde este número.` +
+              (modo === "retirada" ? "<br>Entraremos em contato pelo WhatsApp para combinar a retirada." : "");
+            $("form-checkout").hidden = true;
+          } else {
+            out.textContent = "Pagamento não aprovado. Confira os dados ou tente outro cartão.";
+            btn.disabled = false; btn.textContent = "Pagar";
+          }
+        } catch (e) {
+          out.textContent = "Erro: " + e.message;
+          btn.disabled = false; btn.textContent = "Pagar";
+        }
+      }
+    }
+  });
+
+  // Se os campos seguros não aparecerem, avisa em vez de deixar caixas vazias
+  setTimeout(() => {
+    if (!document.querySelector("#form-checkout__expirationDate iframe")) {
+      mostrarErroInit("Os campos de cartão não carregaram. Desative bloqueadores de anúncio e recarregue a página.");
+    }
+  }, 8000);
+}
+
+iniciar();
+</script>
+</body>
+</html>
