@@ -12,14 +12,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-
-
-
-
-
-
-
-
 </head>
 <body>
 
@@ -36,32 +28,8 @@
 <main class="wrap page">
   <h1>Carrinho</h1>
   <div id="itens"></div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   <div class="total"><span>Total</span><span id="total">R$ 0,00</span></div>
-  <button class="btn" id="pagar">Pagar com Mercado Pago</button>
+  <button class="btn" id="pagar" data-mp-checkout-cta="checkout-api">Finalizar compra</button>
   <p id="msg"></p>
 </main>
 
@@ -75,9 +43,6 @@
 <script src="produtos.js"></script>
 <script src="loja.js"></script>
 <script>
-
-
-
 function obterCarrinho() {
   if (typeof getCarrinho === 'function') return getCarrinho();
   return JSON.parse(localStorage.getItem("carrinho") || "[]");
@@ -108,10 +73,6 @@ function formatarPreco(valor) {
   return "R$ " + Number(valor).toFixed(2).replace(".", ",");
 }
 
-
-
-
-
 function render() {
   const carrinho = obterCarrinho();
   let total = 0;
@@ -122,7 +83,6 @@ function render() {
     containerItens.innerHTML = "<p>Seu carrinho está vazio.</p>";
     document.getElementById("total").textContent = formatarPreco(0);
     document.getElementById("pagar").disabled = true;
-
     atualizarContadorHeader();
     return;
   }
@@ -159,7 +119,6 @@ function render() {
 
   document.getElementById("total").textContent = formatarPreco(total);
   document.getElementById("pagar").disabled = false;
-
   atualizarContadorHeader();
 }
 
@@ -168,108 +127,12 @@ function remover(index) {
   carrinho.splice(index, 1);
   guardarCarrinho(carrinho);
   render();
-
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-document.getElementById("pagar").onclick = async () => {
-  const btn = document.getElementById("pagar");
-  const msg = document.getElementById("msg");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  btn.disabled = true;
-  btn.textContent = "Aguarde...";
-  msg.textContent = "";
-
-  try {
-    const carrinhoBruto = obterCarrinho();
-    
-    // Formata os itens com todos os campos exigidos pela API do Mercado Pago
-    const itensFormatados = carrinhoBruto.map(item => ({
-      id: item.id,
-      qtd: Number(item.qtd || item.quantidade || 1),
-      tamanho: item.tamanho || 'Único',
-      estampa: item.estampa || 'Frente',
-      cor: item.cor || 'Preta'
-    }));
-
-    const r = await fetch("/api/criar-pagamento", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ itens: itensFormatados })
-    });
-
-    const d = await r.json();
-    if (!r.ok || !d.url) throw new Error(d.erro || "Erro interno ao processar pagamento");
-    
-    location.href = d.url;
-  } catch (e) {
-    msg.textContent = "Erro: " + e.message;
-    btn.disabled = false;
-    btn.textContent = "Pagar com Mercado Pago";
-  }
+// O pagamento acontece na página checkout.html (Checkout Transparente)
+document.getElementById("pagar").onclick = () => {
+  if (!obterCarrinho().length) return;
+  location.href = "checkout.html";
 };
 
 render();
