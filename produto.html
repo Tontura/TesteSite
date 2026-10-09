@@ -61,4 +61,178 @@ try {
 
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
-  const produto = PRODUTOS.find(p => p.id === id) ||
+  const produto = PRODUTOS.find(p => p.id === id) || PRODUTOS[0];
+
+  if (!produto) {
+    document.getElementById("detalhe-container").innerHTML = "<p>Produto não encontrado.</p>";
+  } else {
+    const listaImagens = (produto.imagens && produto.imagens.length > 0) 
+      ? produto.imagens 
+      : [produto.imagem];
+
+    let indiceAtual = 0;
+    // Cor e estampa só existem para produtos que as oferecem (camisetas); os demais ficam null
+    let tamanhoSelecionado = (produto.tamanhos && produto.tamanhos.length) ? produto.tamanhos[0] : 'Único';
+    let estampaSelecionada = (produto.estampas && produto.estampas.length) ? produto.estampas[0] : null;
+    let corSelecionada = (produto.cores && produto.cores.length) ? produto.cores[0].nome : null;
+
+    const precoFormatado = typeof brl === 'function' ? brl(produto.preco) : `R$ ${produto.preco.toFixed(2).replace('.', ',')}`;
+
+    document.getElementById("detalhe-container").innerHTML = `
+      <div class="galeria">
+        <div class="galeria-slider">
+          ${listaImagens.length > 1 ? '<button class="btn-slider prev" id="btn-prev">❮</button>' : ''}
+          <div class="slider-track" id="slider-track">
+            ${listaImagens.map((img, i) => `<img src="${img}" alt="${produto.nome} - Foto${i + 1}">`).join('')}
+          </div>
+          ${listaImagens.length > 1 ? '<button class="btn-slider next" id="btn-next">❯</button>' : ''}
+        </div>
+        
+        ${listaImagens.length > 1 ? `
+          <div class="miniaturas" id="miniaturas">
+            ${listaImagens.map((img, i) => `
+              <button class="${i === 0 ? 'ativo' : ''}" onclick="mudarFoto(${i})">
+                <img src="${img}" alt="Miniatura ${i + 1}">
+              </button>
+            `).join('')}
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="info-produto">
+        <h1>${produto.nome}</h1>
+        <p class="preco">${precoFormatado}</p>
+
+        ${produto.cores && produto.cores.length ? `
+          <div class="opcao">
+            <h4>Cor</h4>
+            <div class="tamanhos" id="grupo-cores">
+              ${produto.cores.map((c, i) => `
+                <button type="button" class="${i === 0 ? 'ativo' : ''}" onclick="selecionarCor('${c.nome}', this)">
+                  <span class="swatch" style="background:${c.hex}"></span>${c.nome}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        ${produto.estampas && produto.estampas.length ? `
+          <div class="opcao">
+            <h4>Estampa</h4>
+            <div class="tamanhos" id="grupo-estampas">
+              ${produto.estampas.map((e, i) => `
+                <button type="button" class="${i === 0 ? 'ativo' : ''}" onclick="selecionarEstampa('${e}', this)">${e}</button>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        ${produto.tamanhos && produto.tamanhos.length ? `
+          <div class="opcao">
+            <h4>Tamanho</h4>
+            <div class="tamanhos" id="grupo-tamanhos">
+              ${produto.tamanhos.map((t, i) => `
+                <button type="button" class="${i === 0 ? 'ativo' : ''}" onclick="selecionarTamanho('${t}', this)">${t}</button>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <button class="btn" id="add">Adicionar ao carrinho</button>
+      </div>
+    `;
+
+    const track = document.getElementById("slider-track");
+    const total = listaImagens.length;
+
+    window.mudarFoto = function(index) {
+      if (index < 0) index = total - 1;
+      if (index >= total) index = 0;
+      indiceAtual = index;
+
+      track.style.transform = `translateX(-${indiceAtual * 100}%)`;
+
+      const thumbs = document.querySelectorAll(".miniaturas button");
+      thumbs.forEach((t, i) => {
+        t.classList.toggle("ativo", i === indiceAtual);
+      });
+    };
+
+    const btnPrev = document.getElementById("btn-prev");
+    const btnNext = document.getElementById("btn-next");
+    if (btnPrev && btnNext) {
+      btnPrev.onclick = () => mudarFoto(indiceAtual - 1);
+      btnNext.onclick = () => mudarFoto(indiceAtual + 1);
+    }
+
+    window.selecionarTamanho = function(tamanho, btn) {
+      tamanhoSelecionado = tamanho;
+      document.querySelectorAll("#grupo-tamanhos button").forEach(b => b.classList.remove("ativo"));
+      btn.classList.add("ativo");
+    };
+
+    window.selecionarEstampa = function(estampa, btn) {
+      estampaSelecionada = estampa;
+      document.querySelectorAll("#grupo-estampas button").forEach(b => b.classList.remove("ativo"));
+      btn.classList.add("ativo");
+    };
+
+    window.selecionarCor = function(cor, btn) {
+      corSelecionada = cor;
+      document.querySelectorAll("#grupo-cores button").forEach(b => b.classList.remove("ativo"));
+      btn.classList.add("ativo");
+    };
+
+    // Ação do botão Adicionar ao carrinho
+    document.getElementById("add").onclick = () => {
+      const carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
+
+      // Mesmo produto, tamanho, cor e estampa: soma a quantidade
+      const existente = carrinho.find(i =>
+        i.id === produto.id &&
+        i.tamanho === tamanhoSelecionado &&
+        (i.cor || null) === corSelecionada &&
+        (i.estampa || null) === estampaSelecionada
+      );
+
+      if (existente) {
+        const n = Number(existente.qtd || existente.quantidade || 1) + 1;
+        existente.qtd = n;
+        existente.quantidade = n;
+      } else {
+        carrinho.push({
+          id: produto.id,
+          nome: produto.nome,
+          preco: produto.preco,
+          imagem: produto.imagem || (produto.imagens && produto.imagens[0]),
+          tamanho: tamanhoSelecionado,
+          estampa: estampaSelecionada,
+          cor: corSelecionada,
+          qtd: 1,
+          quantidade: 1
+        });
+      }
+
+      localStorage.setItem("carrinho", JSON.stringify(carrinho));
+
+      // Animação: a foto atual voa até o carrinho (função definida em loja.js)
+      if (typeof voarParaCarrinho === 'function') {
+        voarParaCarrinho(track.children[indiceAtual]);
+      }
+
+      atualizarContadorHeader();
+
+      // Depois da animação, abre o carrinho lateral (função definida em loja.js)
+      setTimeout(() => {
+        if (typeof abrirCarrinhoLateral === 'function') {
+          abrirCarrinhoLateral('Produto adicionado ao carrinho');
+        }
+      }, 900);
+    };
+  }
+} catch (e) {
+  document.getElementById("detalhe-container").innerHTML = "<p>Erro: " + e.message + "</p>";
+}
+</script>
+</body>
+</html>
