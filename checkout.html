@@ -11,12 +11,9 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://sdk.mercadopago.com/js/v2"></script>
 <style>
-  #form-checkout{display:grid;gap:12px;max-width:480px;margin:24px 0;}
-  #form-checkout h3{margin:14px 0 0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim);}
-  #form-checkout label{display:block;margin-bottom:6px;font-size:13px;font-weight:600;}
-  #form-checkout input[type=text],#form-checkout input[type=email]{width:100%;min-height:46px;padding:0 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:400 14px 'Archivo',sans-serif;}
-  .secure-input{min-height:46px;border:1px solid var(--line);background:#fff;overflow:hidden;}
-  .secure-input iframe{display:block !important;width:100% !important;height:100% !important;border:0 !important;}
+  #fs-dados{border:0;margin:24px 0 0;padding:0;min-width:0;display:grid;gap:12px;max-width:480px;}
+  #fs-dados h3{margin:14px 0 0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim);}
+  #fs-dados input[type=text]{width:100%;min-height:46px;padding:0 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:400 14px 'Archivo',sans-serif;}
   .linha{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .resumo{max-width:480px;border:1px solid var(--line);padding:14px 16px;font-size:14px;}
   .resumo div{display:flex;justify-content:space-between;padding:3px 0;}
@@ -27,8 +24,14 @@
   .opcao-box input{margin-right:8px;}
   #painel-envio,#painel-retirada{display:grid;gap:12px;}
   #fretes,#pontos{font-size:14px;}
-  #erro-init,#resultado{max-width:480px;margin-top:14px;font-size:14px;}
+  #continuar{margin-top:12px;}
+  #painel-pagamento{max-width:520px;margin-top:24px;}
+  #painel-pagamento h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim);}
+  #alterar{background:none;border:none;color:var(--ink-dim);font:600 13px 'Archivo',sans-serif;text-decoration:underline;cursor:pointer;margin-top:14px;padding:0;}
+  #erro-init,#resultado{max-width:520px;margin-top:14px;font-size:14px;}
   #erro-init{color:#c0392b;}
+  #resultado img{width:220px;height:220px;display:block;margin:12px 0;background:#fff;padding:8px;}
+  #resultado textarea{width:100%;max-width:480px;min-height:80px;padding:8px;font:12px monospace;}
 </style>
 </head>
 <body>
@@ -49,14 +52,10 @@
   <div class="resumo" id="resumo"></div>
   <div id="erro-init" role="alert" hidden></div>
 
-  <form id="form-checkout">
+  <fieldset id="fs-dados">
     <h3>Seus dados</h3>
-    <input type="text" id="c-nome" placeholder="Nome completo" autocomplete="name" required>
-    <div>
-      <label for="form-checkout__cardholderEmail">E-mail</label>
-      <input type="email" id="form-checkout__cardholderEmail" autocomplete="email" required>
-    </div>
-    <input type="text" id="c-whats" placeholder="WhatsApp com DDD, ex: 35 99999-9999" inputmode="numeric" required>
+    <input type="text" id="c-nome" placeholder="Nome completo" autocomplete="name">
+    <input type="text" id="c-whats" placeholder="WhatsApp com DDD, ex: 35 99999-9999" inputmode="numeric">
 
     <h3>Como você quer receber?</h3>
     <div class="opcoes-entrega">
@@ -88,38 +87,16 @@
     <div id="painel-retirada" hidden>
       <div id="pontos"></div>
     </div>
+  </fieldset>
 
-    <h3>Cartão de crédito</h3>
-    <div>
-      <label id="lbl-num">Número do cartão</label>
-      <div id="form-checkout__cardNumber" class="secure-input"></div>
-    </div>
-    <div class="linha">
-      <div>
-        <label id="lbl-exp">Validade (MM/AA)</label>
-        <div id="form-checkout__expirationDate" class="secure-input"></div>
-      </div>
-      <div>
-        <label id="lbl-cvv">Código de segurança</label>
-        <div id="form-checkout__securityCode" class="secure-input"></div>
-      </div>
-    </div>
-    <div>
-      <label for="form-checkout__cardholderName">Nome no cartão</label>
-      <input type="text" id="form-checkout__cardholderName" autocomplete="cc-name" required>
-    </div>
-    <div>
-      <label for="form-checkout__identificationNumber">CPF do titular</label>
-      <input type="text" id="form-checkout__identificationNumber" inputmode="numeric" autocomplete="off" required>
-    </div>
+  <button type="button" class="btn" id="continuar">Continuar para o pagamento</button>
 
-    <!-- Campos que o SDK exige existir, mesmo ocultos -->
-    <select id="form-checkout__issuer" hidden aria-hidden="true" tabindex="-1"></select>
-    <select id="form-checkout__installments" hidden aria-hidden="true" tabindex="-1"></select>
-    <select id="form-checkout__identificationType" hidden aria-hidden="true" tabindex="-1"></select>
-
-    <button type="submit" class="btn" id="form-checkout__submit">Pagar</button>
-  </form>
+  <section id="painel-pagamento" hidden>
+    <h3>Pagamento</h3>
+    <div id="brick-status">Carregando formas de pagamento...</div>
+    <div id="paymentBrick_container"></div>
+    <button type="button" id="alterar">Alterar dados ou entrega</button>
+  </section>
 
   <div id="resultado" role="status" aria-live="polite"></div>
 </main>
@@ -141,6 +118,8 @@ let subtotal = 0;
 let modo = "envio";       // "envio" ou "retirada"
 let freteSel = null;      // opção de frete escolhida
 let pontoSel = null;      // id do ponto de retirada
+let bricksBuilder = null;
+let brickController = null;
 
 function mostrarErroInit(msg) {
   const el = $("erro-init");
@@ -204,13 +183,169 @@ function trocarModo(novo) {
   atualizarResumo();
 }
 
+function desmontarBrick() {
+  if (brickController) {
+    try { brickController.unmount(); } catch (e) {}
+    brickController = null;
+  }
+}
+
+async function montarBrick(amount) {
+  desmontarBrick();
+  $("brick-status").textContent = "Carregando formas de pagamento...";
+  const settings = {
+    initialization: { amount },
+    customization: {
+      paymentMethods: {
+        creditCard: "all",
+        debitCard: "all",
+        ticket: "all",
+        bankTransfer: "all",
+        maxInstallments: 1
+      }
+    },
+    callbacks: {
+      onReady: () => { $("brick-status").textContent = ""; },
+      onSubmit: ({ selectedPaymentMethod, formData }) => enviarPagamento(formData),
+      onError: err => {
+        console.error("Erro no Brick:", err);
+        mostrarErroInit("Erro no formulário de pagamento. Recarregue a página e tente de novo.");
+      }
+    }
+  };
+  brickController = await bricksBuilder.create("payment", "paymentBrick_container", settings);
+}
+
+function dadosDoPedido() {
+  const v = id => $(id).value.trim();
+  return {
+    itens: carrinho.map(i => ({
+      id: i.id,
+      qtd: Number(i.qtd || i.quantidade || 1),
+      tamanho: i.tamanho || "Único",
+      estampa: i.estampa || null,
+      cor: i.cor || null
+    })),
+    cliente: {
+      nome: v("c-nome"), whatsapp: v("c-whats"),
+      cep: v("c-cep"), rua: v("c-rua"), numero: v("c-numero"), complemento: v("c-comp"),
+      bairro: v("c-bairro"), cidade: v("c-cidade"), uf: v("c-uf").toUpperCase()
+    },
+    entrega: modo === "retirada"
+      ? { tipo: "retirada", pontoId: pontoSel }
+      : { tipo: "envio", freteId: freteSel && freteSel.id }
+  };
+}
+
+// O Brick espera uma Promise: se rejeitar, ele mostra erro e deixa o cliente tentar de novo
+async function enviarPagamento(formData) {
+  const out = $("resultado");
+  out.textContent = "Processando pagamento, aguarde...";
+
+  const r = await fetch("/api/process-payment", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ formData, ...dadosDoPedido() })
+  });
+  const d = await r.json();
+
+  if (!r.ok) {
+    out.textContent = "Erro: " + (d.erro || "não foi possível processar o pagamento.");
+    throw new Error(d.erro || "Erro ao processar pagamento");
+  }
+  if (d.status === "rejected") {
+    out.textContent = "Pagamento recusado. Confira os dados ou tente outro meio de pagamento.";
+    throw new Error("rejected");
+  }
+
+  out.textContent = "";
+  setTimeout(() => mostrarResultado(d), 0);   // depois que o Brick receber a resposta
+}
+
+function copiarPix() {
+  const t = $("pix-code");
+  t.select();
+  navigator.clipboard.writeText(t.value).catch(() => document.execCommand("copy"));
+  $("pix-copiado").textContent = "Código copiado!";
+}
+
+function mostrarResultado(d) {
+  localStorage.removeItem("carrinho");
+  desmontarBrick();
+  $("fs-dados").hidden = true;
+  $("continuar").hidden = true;
+  $("painel-pagamento").hidden = true;
+
+  const out = $("resultado");
+  let html;
+
+  if (d.status === "approved") {
+    html = `<strong>Pagamento aprovado!</strong><br>Número do pedido: ${d.id}<br>Guarde este número.`;
+  } else if (d.pix) {
+    html = `<strong>Quase lá! Pague com Pix.</strong><br>Pedido ${d.id}. Escaneie o QR Code ou copie o código abaixo:` +
+      (d.pix.qr_code_base64 ? `<img src="data:image/png;base64,${d.pix.qr_code_base64}" alt="QR Code Pix">` : "") +
+      `<textarea id="pix-code" readonly></textarea><br>` +
+      `<button type="button" class="btn" onclick="copiarPix()">Copiar código Pix</button> <span id="pix-copiado"></span>` +
+      `<br><br>O pedido é confirmado assim que o pagamento for identificado.`;
+  } else if (d.boleto_url) {
+    html = `<strong>Boleto gerado.</strong><br>Pedido ${d.id}.<br>` +
+      `<a class="btn" style="display:inline-block;margin-top:12px;text-decoration:none" href="${d.boleto_url}" target="_blank" rel="noopener">Abrir boleto</a>` +
+      `<br><br>O pedido é confirmado depois da compensação do pagamento.`;
+  } else {
+    html = `<strong>Pagamento em análise.</strong><br>Pedido ${d.id}. Avisaremos quando for confirmado.`;
+  }
+
+  if (modo === "retirada") html += "<br>Entraremos em contato pelo WhatsApp para combinar a retirada.";
+  out.innerHTML = html;
+  if (d.pix && $("pix-code")) $("pix-code").value = d.pix.qr_code;
+}
+
+function continuarParaPagamento() {
+  const out = $("resultado");
+  out.textContent = "";
+  const v = id => $(id).value.trim();
+
+  if (!v("c-nome") || v("c-whats").replace(/\D/g, "").length < 10) {
+    out.textContent = "Preencha seu nome e o WhatsApp com DDD.";
+    return;
+  }
+  if (modo === "envio") {
+    if (v("c-cep").replace(/\D/g, "").length !== 8 || !v("c-rua") || !v("c-numero") || v("c-uf").length !== 2) {
+      out.textContent = "Preencha o endereço de entrega completo.";
+      return;
+    }
+    if (!freteSel) { out.textContent = "Escolha uma opção de frete."; return; }
+  } else if (!pontoSel) {
+    out.textContent = "Escolha um ponto de retirada.";
+    return;
+  }
+
+  const amount = Math.round((subtotal + valorEntrega()) * 100) / 100;
+  $("fs-dados").disabled = true;
+  $("continuar").hidden = true;
+  $("painel-pagamento").hidden = false;
+  montarBrick(amount).catch(e => {
+    console.error(e);
+    mostrarErroInit("Não foi possível carregar o pagamento. Recarregue a página.");
+  });
+}
+
+function voltarParaDados() {
+  desmontarBrick();
+  $("painel-pagamento").hidden = true;
+  $("fs-dados").disabled = false;
+  $("continuar").hidden = false;
+  $("resultado").textContent = "";
+}
+
 async function iniciar() {
   const contador = $("contador");
   if (contador) contador.innerText = carrinho.reduce((a, i) => a + Number(i.qtd || i.quantidade || 1), 0);
 
   if (!carrinho.length) {
     $("resumo").innerHTML = "Seu carrinho está vazio. <a href='index.html'>Voltar à loja</a>";
-    $("form-checkout").hidden = true;
+    $("fs-dados").hidden = true;
+    $("continuar").hidden = true;
     return;
   }
 
@@ -222,6 +357,7 @@ async function iniciar() {
     if (!r.ok || !cfg.publicKey) throw new Error(cfg.error || "Chave pública ausente");
   } catch (e) {
     mostrarErroInit("Não foi possível carregar o pagamento: " + e.message);
+    $("continuar").disabled = true;
     return;
   }
 
@@ -262,102 +398,15 @@ async function iniciar() {
 
   if (typeof MercadoPago === "undefined") {
     mostrarErroInit("O SDK do Mercado Pago não carregou. Se você usa bloqueador de anúncios, desative-o nesta página.");
+    $("continuar").disabled = true;
     return;
   }
 
-  const mp = new MercadoPago(cfg.publicKey);
-  const cardForm = mp.cardForm({
-    amount: subtotal.toFixed(2),
-    iframe: true,
-    form: {
-      id: "form-checkout",
-      cardNumber: { id: "form-checkout__cardNumber", placeholder: "Número do cartão" },
-      expirationDate: { id: "form-checkout__expirationDate", placeholder: "MM/AA" },
-      securityCode: { id: "form-checkout__securityCode", placeholder: "CVV" },
-      cardholderName: { id: "form-checkout__cardholderName" },
-      issuer: { id: "form-checkout__issuer" },
-      installments: { id: "form-checkout__installments" },
-      identificationType: { id: "form-checkout__identificationType" },
-      identificationNumber: { id: "form-checkout__identificationNumber" },
-      cardholderEmail: { id: "form-checkout__cardholderEmail" }
-    },
-    callbacks: {
-      onFormMounted: err => { if (err) mostrarErroInit("Erro ao montar o formulário de cartão."); },
-      onSubmit: async event => {
-        event.preventDefault();
-        const btn = $("form-checkout__submit");
-        const out = $("resultado");
-        const v = id => $(id).value.trim();
+  const mp = new MercadoPago(cfg.publicKey, { locale: "pt-BR" });
+  bricksBuilder = mp.bricks();
 
-        // Validação da entrega
-        if (modo === "envio") {
-          if (!v("c-cep") || !v("c-rua") || !v("c-numero") || v("c-uf").length !== 2) {
-            out.textContent = "Preencha o endereço de entrega completo.";
-            return;
-          }
-          if (!freteSel) { out.textContent = "Escolha uma opção de frete."; return; }
-        } else if (!pontoSel) {
-          out.textContent = "Escolha um ponto de retirada.";
-          return;
-        }
-
-        const { token, paymentMethodId, identificationNumber, cardholderEmail } = cardForm.getCardFormData();
-
-        btn.disabled = true; btn.textContent = "Processando...";
-        out.textContent = "Processando pagamento, aguarde...";
-
-        try {
-          const itensFmt = carrinho.map(i => ({
-            id: i.id,
-            qtd: Number(i.qtd || i.quantidade || 1),
-            tamanho: i.tamanho || "Único",
-            estampa: i.estampa || null,
-            cor: i.cor || null
-          }));
-
-          const r = await fetch("/api/process-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              token, paymentMethodId,
-              itens: itensFmt,
-              cliente: {
-                nome: v("c-nome"), email: cardholderEmail, cpf: identificationNumber,
-                whatsapp: v("c-whats"),
-                cep: v("c-cep"), rua: v("c-rua"), numero: v("c-numero"), complemento: v("c-comp"),
-                bairro: v("c-bairro"), cidade: v("c-cidade"), uf: v("c-uf").toUpperCase()
-              },
-              entrega: modo === "retirada"
-                ? { tipo: "retirada", pontoId: pontoSel }
-                : { tipo: "envio", freteId: freteSel.id }
-            })
-          });
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.erro || "Erro ao processar pagamento");
-
-          if (d.status === "processed" || d.status === "approved") {
-            localStorage.removeItem("carrinho");
-            out.innerHTML = `<strong>Pagamento aprovado!</strong><br>Número do pedido: ${d.id}<br>Guarde este número.` +
-              (modo === "retirada" ? "<br>Entraremos em contato pelo WhatsApp para combinar a retirada." : "");
-            $("form-checkout").hidden = true;
-          } else {
-            out.textContent = "Pagamento não aprovado. Confira os dados ou tente outro cartão.";
-            btn.disabled = false; btn.textContent = "Pagar";
-          }
-        } catch (e) {
-          out.textContent = "Erro: " + e.message;
-          btn.disabled = false; btn.textContent = "Pagar";
-        }
-      }
-    }
-  });
-
-  // Se os campos seguros não aparecerem, avisa em vez de deixar caixas vazias
-  setTimeout(() => {
-    if (!document.querySelector("#form-checkout__expirationDate iframe")) {
-      mostrarErroInit("Os campos de cartão não carregaram. Desative bloqueadores de anúncio e recarregue a página.");
-    }
-  }, 8000);
+  $("continuar").onclick = continuarParaPagamento;
+  $("alterar").onclick = voltarParaDados;
 }
 
 iniciar();
