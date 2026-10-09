@@ -1,10 +1,5 @@
 // produtos.js
 // Só dados dos produtos. Nenhuma chave secreta aqui.
-const CORES_CAMISETA = [
-  { nome: "Preta",  hex: "#111111" },
-  { nome: "Branca", hex: "#ffffff" },
-  { nome: "Vermelho", hex: "#f40e07" }
-];
 const ESTAMPAS_CAMISETA = ["Frente", "Costas"];
 
 const PRODUTOS = [
@@ -16,7 +11,6 @@ const PRODUTOS = [
     imagem: "img/cam-01.png",
     imagens: ["img/cam-01.png", "img/cam-01-2.png", "img/cam-01-3.png", "img/cam-01-4.png"],
     tamanhos: ["P", "M", "G", "GG"],
-    cores: CORES_CAMISETA,
     estampas: ESTAMPAS_CAMISETA
   },
   {
@@ -25,9 +19,8 @@ const PRODUTOS = [
     categoria: "camisetas",
     preco: 79.9,
     imagem: "img/cam-02.png",
-    imagens: ["img/cam-02.png","img/cam-02-2.png","img/cam-02-3.png","img/cam-02-4.png"],
+    imagens: ["img/cam-02.png", "img/cam-02-2.png", "img/cam-02-3.png", "img/cam-02-4.png"],
     tamanhos: ["P", "M", "G", "GG"],
-    cores: CORES_CAMISETA,
     estampas: ESTAMPAS_CAMISETA
   },
   {
@@ -38,7 +31,6 @@ const PRODUTOS = [
     imagem: "img/cam-03.png",
     imagens: ["img/cam-03.png"],
     tamanhos: ["P", "M", "G", "GG"],
-    cores: CORES_CAMISETA,
     estampas: ESTAMPAS_CAMISETA
   },
   {
@@ -49,7 +41,6 @@ const PRODUTOS = [
     imagem: "img/cam-04.png",
     imagens: ["img/cam-04.png"],
     tamanhos: ["P", "M", "G", "GG"],
-    cores: CORES_CAMISETA,
     estampas: ESTAMPAS_CAMISETA
   },
   {
@@ -60,7 +51,6 @@ const PRODUTOS = [
     imagem: "img/cam-05.png",
     imagens: ["img/cam-05.png"],
     tamanhos: ["P", "M", "G", "GG"],
-    cores: CORES_CAMISETA,
     estampas: ESTAMPAS_CAMISETA
   },
   {
