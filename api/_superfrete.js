@@ -1,6 +1,8 @@
 const PRODUTOS = require('../produtos.js');
 
 // cm e kg, produto EMBALADO. Meça e pese o seu de verdade.
+// Para chinelo ou ecobag, você pode colocar um campo "pacote" no produto em produtos.js:
+//   pacote: { width: 12, height: 10, length: 30, weight: 0.4 }
 const PACOTE_PADRAO = { width: 25, height: 3, length: 30, weight: 0.3 };
 
 async function cotarFrete(cepDestino, itens) {
@@ -12,7 +14,7 @@ async function cotarFrete(cepDestino, itens) {
     const pk = p.pacote || PACOTE_PADRAO;
     const q = Number(i.qtd) || 1;
     weight += pk.weight * q;
-    height += pk.height * q;
+    height += pk.height * q;                  // peças empilhadas
     length = Math.max(length, pk.length);
     width  = Math.max(width, pk.width);
   }
@@ -39,7 +41,7 @@ async function cotarFrete(cepDestino, itens) {
     body: JSON.stringify({
       from: { postal_code: process.env.CEP_ORIGEM },
       to:   { postal_code: cepDestino },
-      services: '1,2,17',
+      services: '1,2,17',                     // PAC, SEDEX e Mini Envios (confirmar na doc)
       options: { own_hand: false, receipt: false, insurance_value: 0, use_insurance_value: false },
       package: pacote
     })
